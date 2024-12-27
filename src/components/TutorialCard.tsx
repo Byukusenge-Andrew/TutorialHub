@@ -12,8 +12,8 @@ interface TutorialCardProps {
 export function TutorialCard({ tutorial }: TutorialCardProps) {
   console.log("tutorila in card", tutorial)
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      <div className="p-6">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden dark:bg-gray-900 dark:text- ">
+      <div className="p-6 dark:text-white">
         <div className="flex justify-between items-start mb-4">
           <h3 className="text-xl font-semibold">{tutorial.title}</h3>
           <div className="flex items-center text-yellow-500">

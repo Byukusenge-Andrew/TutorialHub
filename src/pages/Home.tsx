@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, Video, Users, Star } from 'lucide-react';
+import { BookOpen,  Users, Star, Keyboard } from 'lucide-react';
 import { api } from '@/services/api';
 import { useEffect, useState } from 'react';
 import { Tutorial } from '../types';
+import { Button } from '@/components/ui/button';
 
 export function Home() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
@@ -33,7 +34,7 @@ export function Home() {
   }, []);
 
   const FeaturedTutorialCard = ({ tutorial }: { tutorial: Tutorial }) => (
-    <div className="bg-white  rounded-lg shadow-md text-center">
+    <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  rounded-lg shadow-md text-center">
       <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold">{tutorial.title}</h3>
@@ -43,7 +44,7 @@ export function Home() {
         </div>
       </div>
 
-      <p className="text-gray-600 mb-4">{tutorial.description || 'No description available.'}</p>
+      <p className="text-gray-600 mb-4">{tutorial.description.slice(0,63) || 'No description available.'}</p>
       <Link
         to={`/tutorials/${tutorial._id}`}
         className="text-blue-600 hover:text-blue-800 font-medium"
@@ -67,27 +68,28 @@ export function Home() {
         </Link>
       </section>
 
-      <section className="grid md:grid-cols-3 gap-8">
-        <div className="bg-white p-6 rounded-lg shadow-md text-center">
-          <Video className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-          <h2 className="text-xl font-semibold mb-2">Video Tutorials</h2>
-          <p className="text-gray-600">Learn at your own pace with our comprehensive video lessons</p>
+      <section className="grid md:grid-cols-3 gap-8 ">
+        
+        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65 p-6 rounded-lg shadow-md text-center">
+          <Keyboard className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+          <h2 className="text-xl font-semibold mb-2">Practice Typing</h2>
+          <p className="text-gray-600">Improve your typing speed and accuracy with interactive exercises</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-md text-center">
+        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200  hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-md text-center">
           <BookOpen className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Written Guides</h2>
           <p className="text-gray-600">Detailed step-by-step instructions for every skill level</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow-md text-center">
+        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-md text-center">
           <Users className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Community</h2>
           <p className="text-gray-600">Join discussions and share knowledge with fellow learners</p>
         </div>
       </section>
 
-      <section className="bg-gray-50 -mx-4 px-4 py-12">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-8">Featured Tutorials</h2>
+      <section className="-mx-4 px-4 py-12">
+        <div className=" mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-8">New Tutorials</h2>
           {isLoading ? (
             <p>Loading tutorials...</p>
           ) : error ? (
@@ -96,16 +98,25 @@ export function Home() {
             <p>No tutorials available.</p>
           ) : (
             <>
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="flex flex-row gap-1 w-full box-border">
+              
               {tutorials.slice(0, 3).map((tutorial) => (
+                <div className='rounded-lg  p-2 text-center'>
                 <FeaturedTutorialCard key={tutorial._id} tutorial={tutorial}
                 
                 />
+                </div>
               ))}
+              
             </div>
             </>
           )}
         </div>
+        {/* <Link to='/tutorials'> */}
+            {/* <Button className=''> */}
+              {/* More Tutorials */}
+            {/* </Button> */}
+            {/* </Link>  */}
       </section>
     </div>
   );

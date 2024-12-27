@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { 
   User, Settings, BookOpen, Timer, Code2, 
   Keyboard, BookOpenCheck, BrainCircuit 
@@ -33,10 +33,14 @@ export function UserDashboard() {
               <h2 className="text-xl font-bold">{user?.name}</h2>
               <p className="text-muted-foreground">{user?.email}</p>
             </div>
-            <Button variant="outline" className="w-full">
+            <Link to={"/profile"}>
+            <Button variant="outline" className="w-full" 
+            
+            >
               <Settings className="w-4 h-4 mr-2" />
-              Edit Profile
+              View Profile
             </Button>
+            </Link>
           </div>
         </Card>
 
