@@ -26,9 +26,14 @@ export function TutorialForm() {
       description,
       content,
       author: user,
+      authorId: {
+        _id: user.id,
+        name: user.name,
+        email: user.email
+      },
       category,
       tags: tags.split(',').map((tag) => tag.trim()),
-      sections: [{ id: 'default', title: 'Main Content', content, order: 0 }],
+      sections: [{ _id: 'default', id: 'default', title: 'Main Content', content, order: 0 }],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       rating: 0,

@@ -1,6 +1,7 @@
 import { User } from '@/types/auth';
-import { Tutorial, Progress, DSAChallenge, Section } from '@/types';
+import { Tutorial, Progress, DSAChallenge, TutorialProgress, Section, TutorialResponse } from '@/types';
 import { create } from 'domain';
+import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -31,7 +32,6 @@ export const api = {
       });
 
       const data = await handleResponse<{ status: string; data: { user: User; token: string } }>(response);
-      console.log('API response:', data); // Debug log
 
       if (!data.data?.user) {
         throw new Error('Invalid response format');
@@ -62,12 +62,23 @@ export const api = {
 
   tutorials: {
     getAll: async () => {
-      const response = await fetch(`${API_URL}/tutorials`, {
-        headers: getAuthHeader() as HeadersInit,
-      });
-      return handleResponse<Tutorial[]>(response);
-    },
+      try {
+        const response = await fetch(`${API_URL}/tutorials`, {
+          headers: getAuthHeader(),
+        });
 
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data: TutorialResponse = await response.json();
+        return data.data.tutorials;
+      } catch (error) {
+        console.error('Failed to fetch tutorials:', error);
+        return [];
+      }
+    },
+     
     create: async (tutorialData: {
       title: string;
       description: string;
@@ -88,14 +99,22 @@ export const api = {
     },
 
     getById: async (id: string) => {
-      console.log('Fetching tutorial with ID:', id)
-      const response = await fetch(`${API_URL}/tutorials/${id}`, {
-
-        headers: getAuthHeader() as HeadersInit,
-      });
-      console.log('API Response:', response);
-      return handleResponse<Tutorial>(response);
-
+      try {
+        const response = await fetch(`${API_URL}/tutorials/${id}`, {
+          method: 'GET',
+          headers: getAuthHeader()
+        });
+    
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    
+        const data = await response.json();
+        return data; // Return entire response structure
+      } catch (error) {
+        console.error('Error in getById:', error);
+        throw error;
+      }
     },
 
     update: async (id: string, tutorialData: Partial<Tutorial>) => {
@@ -211,4 +230,42 @@ export const api = {
       }>(response);
     },
   },
-}; 
+  progress:{
+    getProgress: async (userId: string) => {
+      try {
+        const response = await fetch(`${API_URL}/progress/${userId}`, {
+          headers: getAuthHeader() as HeadersInit,
+        });
+        return handleResponse<TutorialProgress>(response);
+      } catch (error) {
+        console.error('Error in getProgress:', error);
+        throw error;
+      }
+    },
+    updateProgress: async (tutorialId: string, completedSection: string) => {
+      const response = await fetch(`${API_URL}/progress/${tutorialId}`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ completedSection }),
+      });
+      return handleResponse<{ progress: any }>(response);
+    },
+
+    getAllProgress: async () => {
+      const response = await fetch(`${API_URL}/progress`, {
+        headers: getAuthHeader(),
+      });
+      return handleResponse<{ progress: any[] }>(response);
+    },
+  }
+};
+
+const progress = {
+  getAllProgress: async () => {
+    const response = await axios.get('/api/progress');
+    return response.data;
+  },
+};

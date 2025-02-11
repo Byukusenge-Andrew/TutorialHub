@@ -4,6 +4,7 @@ export interface Section {
   title: string;
   content: string;
   order: number;
+  id: string;
 }
 
 export interface ITutorial extends Document {

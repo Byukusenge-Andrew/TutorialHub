@@ -5,19 +5,21 @@ import { Plus, Minus, Save, ChevronRight, ChevronDown } from 'lucide-react';
 import { useAuthStore } from '../store/auth-store';
 import { Button } from '@/components/ui/button';
 import { api } from '@/services/api';
-
-interface Section {
-  id?: string;
-  title: string;
-  content: string;
-  order: number;
-  parentId?: string;
-  subsections: Section[];
-}
+import { Section } from '@/types';
+import { CodeEditor } from '@/components/CodeEditor';
 
 export function CreateTutorial() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+
+  const createEmptySection = (order: number): Section => ({
+    _id: crypto.randomUUID(),
+    title: '',
+    content: '',
+    order,
+    subsections: []
+  });
+
   const [formData, setFormData] = useState<{
     title: string;
     description: string;
@@ -29,13 +31,25 @@ export function CreateTutorial() {
     description: '',
     category: '',
     tags: '',
-    sections: [{
-      title: '',
-      content: '',
-      order: 0,
-      subsections: [] as Section[]
-    }]
+    sections: [createEmptySection(0)]
   });
+
+  const [editorModes, setEditorModes] = useState<Record<string, 'markdown' | 'code'>>({});
+  const [codeLanguages, setCodeLanguages] = useState<Record<string, string>>({});
+
+  const toggleEditorMode = (sectionId: string) => {
+    setEditorModes(prev => ({
+      ...prev,
+      [sectionId]: prev[sectionId] === 'code' ? 'markdown' : 'code'
+    }));
+  };
+
+  const updateCodeLanguage = (sectionId: string, language: string) => {
+    setCodeLanguages(prev => ({
+      ...prev,
+      [sectionId]: language
+    }));
+  };
 
   if (!user || user.role !== 'admin') {
     navigate('/tutorials');
@@ -47,17 +61,22 @@ export function CreateTutorial() {
     if (!user) return;
 
     try {
+      const ensureValidSection = (section: Section): Section => ({
+        _id: section._id || crypto.randomUUID(),
+        title: section.title,
+        content: section.content,
+        order: section.order,
+        parentId: section.parentId,
+        subsections: (section.subsections || []).map(ensureValidSection)
+      });
+
+      const sectionsWithIds = formData.sections.map(ensureValidSection);
+
       const response = await api.tutorials.create({
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
+        ...formData,
+        sections: sectionsWithIds,
         tags: formData.tags.split(',').map(tag => tag.trim()),
-        authorId: user.id,
-        sections: formData.sections.map((section, index) => ({
-          ...section,
-          id: `temp-${index}`,
-          order: index
-        }))
+        authorId: user.id
       });
 
       navigate(`/tutorials/${response._id}`);
@@ -69,25 +88,15 @@ export function CreateTutorial() {
   const addSection = (parentIndex?: number) => {
     setFormData(prev => {
       if (typeof parentIndex === 'undefined') {
-        // Add top-level section
         return {
           ...prev,
-          sections: [...prev.sections, { 
-            title: '', 
-            content: '', 
-            order: prev.sections.length,
-            subsections: []
-          }]
+          sections: [...prev.sections, createEmptySection(prev.sections.length)]
         };
       } else {
-        // Add subsection
         const newSections = [...prev.sections];
-        newSections[parentIndex].subsections.push({
-          title: '',
-          content: '',
-          order: newSections[parentIndex].subsections.length,
-          subsections: []
-        });
+        newSections[parentIndex].subsections?.push(
+          createEmptySection(newSections[parentIndex].subsections.length)
+        );
         return { ...prev, sections: newSections };
       }
     });
@@ -103,7 +112,7 @@ export function CreateTutorial() {
       } else {
         const newSections = [...prev.sections];
         newSections[parentIndex].subsections = 
-          newSections[parentIndex].subsections.filter((_, i) => i !== index);
+          newSections[parentIndex].subsections?.filter((_, i) => i !== index) || [];
         return { ...prev, sections: newSections };
       }
     });
@@ -126,7 +135,7 @@ export function CreateTutorial() {
       } else {
         const newSections = [...prev.sections];
         newSections[parentIndex].subsections = 
-          newSections[parentIndex].subsections.map((section, i) =>
+          newSections[parentIndex].subsections?.map((section, i) =>
             i === index ? { ...section, [field]: value } : section
           );
         return { ...prev, sections: newSections };
@@ -135,7 +144,7 @@ export function CreateTutorial() {
   };
 
   const renderSection = (section: Section, index: number, parentIndex?: number) => (
-    <div key={index} className="space-y-4 p-4 border border-border rounded-md">
+    <div key={section._id} className="space-y-4 p-4 border border-border rounded-md">
       <div className="flex justify-between items-start gap-4">
         <div className="flex-1 space-y-4">
           <input
@@ -146,56 +155,84 @@ export function CreateTutorial() {
             className="w-full px-4 py-2 border border-border rounded-md bg-background"
             required
           />
-          <div className="relative">
-            <Editor
-              height="200px"
-              defaultLanguage="markdown"
-              value={section.content}
-              onChange={(value) => updateSection(index, 'content', value || '', parentIndex)}
-              theme="vs-dark"
-              options={{
-                minimap: { enabled: false },
-                lineNumbers: 'on',
-                wordWrap: 'on',
-              }}
-            />
-            <div className="absolute top-2 right-2 flex gap-2 z-50">
+          <div className="relative space-y-2">
+            {/* Editor Mode Toggle - Moved outside the editor container */}
+            <div className="flex justify-end gap-2 mb-2">
               <Button
                 type="button"
-                onClick={() => {
-                  const cursorPosition = section.content.length;
-                  updateSection(
-                    index,
-                    'content',
-                    `${section.content}\n\n## New Section\n\nContent here...`,
-                    parentIndex
-                  );
-                }}
+                onClick={() => toggleEditorMode(section._id)}
                 variant="secondary"
                 size="sm"
-                className="bg-white dark:bg-gray-800 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="z-10 bg-white dark:bg-gray-800"
               >
-                <Plus className="w-4 h-4 mr-1" />
-                Section
+                {editorModes[section._id] === 'code' ? 'Switch to Markdown' : 'Switch to Code Editor'}
               </Button>
-              <Button
-                type="button"
-                onClick={() => {
-                  const cursorPosition = section.content.length;
-                  updateSection(
-                    index,
-                    'content',
-                    `${section.content}\n\n### New Subsection\n\nContent here...`,
-                    parentIndex
-                  );
-                }}
-                variant="secondary"
-                size="sm"
-                className="bg-white dark:bg-gray-800 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <Plus className="w-4 h-4 mr-1" />
-                Subsection
-              </Button>
+            </div>
+
+            {/* Editor Container */}
+            <div className="relative">
+              {editorModes[section._id] === 'code' ? (
+                <CodeEditor
+                  value={section.content}
+                  onChange={(value) => updateSection(index, 'content', value || '', parentIndex)}
+                  language={codeLanguages[section._id] || 'javascript'}
+                
+                />
+              ) : (
+                <div className="relative">
+                  <Editor
+                    height="200px"
+                    defaultLanguage="markdown"
+                    value={section.content}
+                    onChange={(value) => updateSection(index, 'content', value || '', parentIndex)}
+                    theme="vs-dark"
+                    options={{
+                      minimap: { enabled: false },
+                      lineNumbers: 'on',
+                      wordWrap: 'on',
+                    }}
+                  />
+                  {/* Section/Subsection Buttons */}
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const cursorPosition = section.content.length;
+                        updateSection(
+                          index,
+                          'content',
+                          `${section.content}\n\n## New Section\n\nContent here...`,
+                          parentIndex
+                        );
+                      }}
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white dark:bg-gray-800 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Section
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const cursorPosition = section.content.length;
+                        updateSection(
+                          index,
+                          'content',
+                          `${section.content}\n\n### New Subsection\n\nContent here...`,
+                          parentIndex
+                        );
+                      }}
+                      variant="secondary"
+                      size="sm"
+                      className="bg-white dark:bg-gray-800 shadow-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Subsection
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -223,9 +260,9 @@ export function CreateTutorial() {
           )}
         </div>
       </div>
-      {section.subsections?.length > 0 && (
+      {(section.subsections ?? []).length > 0 && (
         <div className="ml-8 space-y-4">
-          {section.subsections.map((subsection, subIndex) => 
+          {section.subsections?.map((subsection, subIndex) => 
             renderSection(subsection, subIndex, index)
           )}
         </div>

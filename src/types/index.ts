@@ -17,16 +17,26 @@ export interface Tutorial {
   _id: string;
   title: string;
   description: string;
-  content: string;
-  author: User;
+  sections: Section[];
   category: string;
   tags: string[];
-  sections: Section[];
   createdAt: string;
   updatedAt: string;
-  videoUrl?: string;
   rating: number;
   totalRatings: number;
+  authorId: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+}
+
+export interface TutorialResponse {
+  status: string;
+  results: number;
+  data: {
+    tutorials: Tutorial[];
+  };
 }
 
 export interface Progress {
@@ -39,10 +49,12 @@ export interface Progress {
 }
 
 export interface Section {
-  id: string;
+  _id: string;
   title: string;
   content: string;
   order: number;
+  parentId?: string;
+  subsections?: Section[];
 }
 
 export interface TypingStats {
@@ -74,6 +86,11 @@ export interface DSAChallenge {
   authorId: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ApiResponse<T> {
+  status: string;
+  data: T;
 }
 
 export * from './auth';

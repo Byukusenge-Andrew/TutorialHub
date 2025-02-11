@@ -13,10 +13,9 @@ export function Footer() {
                       </Link>
           
           <div className="flex space-x-6 md:mx-16">
-            <a href="#" className="hover:text-blue-400">About</a>
-            <a href="#" className="hover:text-blue-400">Contact</a>
-            <a href="#" className="hover:text-blue-400">Terms</a>
-            <a href="#" className="hover:text-blue-400">Privacy</a>
+            <Link  to={'/about'} className="hover:text-blue-400">About</Link>
+            <Link to={'/terms'}  className="hover:text-blue-400">Terms</Link>
+            <Link to={'/privacy'} className="hover:text-blue-400">Privacy</Link>
           </div>
         </div>
         <div className="mt-8 text-center text-white">

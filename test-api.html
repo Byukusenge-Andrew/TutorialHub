@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Tutorial API Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <h2>Tutorial API Test</h2>
+    <input title="Tutorial ID" type="text" id="tutorialId" value="676d70886202512b37b5ff17">
+    <button onclick="fetchTutorial()">Fetch Tutorial</button>
+    <div id="result"></div>
+
+    <script>
+        async function fetchTutorial() {
+            const tutorialId = document.getElementById('tutorialId').value;
+            const result = document.getElementById('result');
+            
+            try {
+                const response = await fetch(`http://localhost:3000/api/tutorials/${tutorialId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                result.innerHTML = `
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                result.innerHTML = `Error: ${error.message}`;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

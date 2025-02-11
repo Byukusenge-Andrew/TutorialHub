@@ -10,7 +10,7 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <App />
       {/* Theme Toggle Button (Always Visible) */}
-      <div className="fixed top-24 right-4 z-50"
+      <div className="fixed bottom-24 right-16  z-50"
       title='theme toggle'
       >
         <ThemeToggle />

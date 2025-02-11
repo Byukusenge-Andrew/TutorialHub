@@ -7,29 +7,20 @@ export interface AuthRequest extends Request {
   user?: any;
 }
 
-export const protect = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    // Get token from header
     const token = req.headers.authorization?.replace('Bearer ', '');
-
     if (!token) {
       throw new AuthError('No token provided');
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    
-    // Check if user still exists
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
     const user = await User.findById((decoded as any).id);
+
     if (!user) {
-      throw new AuthError('User no longer exists');
+      throw new AuthError('User not found');
     }
 
-    // Grant access
     req.user = user;
     next();
   } catch (error) {
@@ -37,11 +28,11 @@ export const protect = async (
   }
 };
 
-export const restrictTo = (...roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
-    if (!roles.includes(req.user.role)) {
-      return next(new AuthError('Not authorized to access this route'));
-    }
-    next();
-  };
-}; 
+export const authorizeAdmin = async (req: Request, res: Response, next: NextFunction) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) {
+    throw new AuthError('No token provided');
+  }
+  const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+  next();
+};

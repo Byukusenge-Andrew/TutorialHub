@@ -1,0 +1,67 @@
+/* // ...existing code... */
+.profile-details {
+  gap: 2rem;
+}
+
+.progress-bar-container {
+  width: 100%;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  height: 0.625rem;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 9999px;
+  background-color: #2563eb;
+  transition: width 0.3s ease;
+}
+
+.progress-bar[data-progress] {
+  width: attr(data-progress) ;
+}
+
+/* Editor toolbar styles */
+.editor-toolbar {
+  position: relative;
+  z-index: 20;
+}
+
+.editor-container {
+  position: relative;
+}
+
+.monaco-editor {
+  z-index: 10;
+}
+
+/* Markdown content styles */
+.prose pre {
+  background-color: #1e1e1e;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+
+.prose code {
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.prose h2 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.prose ul, .prose ol {
+  margin-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+/* // ...existing code... */

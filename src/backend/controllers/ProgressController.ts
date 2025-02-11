@@ -2,6 +2,8 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import ProgressService from '../services/ProgressService';
 import { catchAsync } from '../utils/catchAsync';
+import { validationResult } from 'express-validator';
+import { AppError } from '../utils/errors';
 
 export class ProgressController {
   getProgress = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -27,6 +29,11 @@ export class ProgressController {
   });
 
   updateProgress = catchAsync(async (req: AuthRequest, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      throw new AppError('Invalid request data', 400);
+    }
+
     const progress = await ProgressService.updateProgress(
       req.user.id,
       req.params.tutorialId,
@@ -52,4 +59,4 @@ export class ProgressController {
   });
 }
 
-export default new ProgressController(); 
+export default new ProgressController();

@@ -19,6 +19,7 @@ import { CreateTutorial } from './pages/admin/CreateTutorial';
 import { AdminTutorials } from './pages/admin/AdminTutorials';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
+import { About } from './pages/static/About';
 
 function App() {
   return (
@@ -27,6 +28,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/about" element={<About />} />
+          
           
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />

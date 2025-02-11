@@ -16,7 +16,7 @@ export function TutorialList() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-
+  
   useEffect(() => {
     loadData();
   }, []);
@@ -30,7 +30,7 @@ export function TutorialList() {
       ]);
   
       // Extract tutorials from the response
-      const tutorialsData = tutorialsResponse.data.tutorials;
+      const tutorialsData = tutorialsResponse;
   
       setTutorials(Array.isArray(tutorialsData) ? tutorialsData : []);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);

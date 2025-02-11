@@ -33,7 +33,7 @@ export function CreateTutorial() {
         authorId: userId,
         sections: formData.sections.map((section, index) => ({
           ...section,
-          id: `temp-${index}`,
+          _id: `temp-${index}`,
           order: index
         }))
       });

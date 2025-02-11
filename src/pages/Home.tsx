@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BookOpen,  Users, Star, Keyboard } from 'lucide-react';
+import { BookOpen,  Users, Star, Keyboard, BrainCog, BrainCircuitIcon } from 'lucide-react';
 import { api } from '@/services/api';
 import { useEffect, useState } from 'react';
 import { Tutorial } from '../types';
@@ -15,10 +15,8 @@ export function Home() {
       try {
         setIsLoading(true);
         const tutorialsResponse = await api.tutorials.getAll();
-        const tutorialsData = tutorialsResponse?.data?.tutorials;
-
-        if (Array.isArray(tutorialsData)) {
-          setTutorials(tutorialsData);
+        if (Array.isArray(tutorialsResponse)) {
+          setTutorials(tutorialsResponse);
         } else {
           throw new Error('Unexpected API response format');
         }
@@ -34,13 +32,13 @@ export function Home() {
   }, []);
 
   const FeaturedTutorialCard = ({ tutorial }: { tutorial: Tutorial }) => (
-    <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  rounded-lg shadow-md text-center">
+    <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  rounded-lg shadow-lg text-center">
       <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold">{tutorial.title}</h3>
         <div className="flex items-center">
           <Star className="h-5 w-5 text-yellow-400 fill-current" />
-          <span className="ml-1">{tutorial.rating || 'N/A'}</span>
+          <span className="ml-1">N/A</span>
         </div>
       </div>
 
@@ -55,36 +53,46 @@ export function Home() {
     </div>
   );
 
+  
+
   return (
     <div className="space-y-16">
       <section className="text-center">
         <h1 className="text-4xl font-bold mb-4">Welcome to TutorialHub</h1>
-        <p className="text-xl text-gray-600 mb-8">Learn, Share, and Grow with Our Community</p>
-        <Link
-          to="/tutorials"
-          className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 inline-block"
-        >
-          Explore Tutorials
-        </Link>
+        <p className="text-xl text-gray-600 mb-8">Learn and Grow with Our Community</p>
+        {/* <Link */}
+          {/* to="/tutorials" */}
+          {/* className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 inline-block" */}
+        {/* > */}
+          {/* Explore TutorialHub */}
+        {/* </Link> */}
       </section>
 
       <section className="grid md:grid-cols-3 gap-8 ">
-        
-        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65 p-6 rounded-lg shadow-md text-center">
+        <Link to={"/typing"} >
+        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65 p-6 rounded-lg shadow-lg text-center">
           <Keyboard className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Practice Typing</h2>
           <p className="text-gray-600">Improve your typing speed and accuracy with interactive exercises</p>
-        </div>
-        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200  hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-md text-center">
+        </div></Link>
+        <Link to={"/tutorials"}>
+        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200  hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-lg text-center">
           <BookOpen className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Written Guides</h2>
           <p className="text-gray-600">Detailed step-by-step instructions for every skill level</p>
-        </div>
-        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-md text-center">
+        </div></Link>
+        <Link to={"/community"}>
+        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-lg text-center">
           <Users className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Community</h2>
           <p className="text-gray-600">Join discussions and share knowledge with fellow learners</p>
-        </div>
+        </div></Link>
+        <Link to={"/community"}>
+        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-lg text-center">
+          <BrainCircuitIcon className="h-12 w-12 mx-auto mb-4 text-blue-600" />
+          <h2 className="text-xl font-semibold mb-2">Challenges</h2>
+          <p className="text-gray-600">Test your knowledge and problem-solving skills with our coding challenges</p>
+        </div></Link>
       </section>
 
       <section className="-mx-4 px-4 py-12">

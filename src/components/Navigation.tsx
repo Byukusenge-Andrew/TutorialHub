@@ -88,7 +88,7 @@ export function Navigation() {
               DSA Exercises
             </Link>
             {isAuthenticated && user ? (
-              <div className="space-y-2">
+              <div className="space-y-2 items-end block">
                 <Button>
                   <Link
                     to={user.role === 'admin' ? '/admin' : '/dashboard'}
@@ -102,12 +102,13 @@ export function Navigation() {
                     logout();
                     setMenuOpen(false);
                   }}
+                  className='hover:bg-red-800 ml-8 px-8'
                 >
                   Logout
                 </Button>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 block">
                 <Button>
                   <Link to="/login" onClick={() => setMenuOpen(false)}>
                     Login

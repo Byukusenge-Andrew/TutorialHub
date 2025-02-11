@@ -98,7 +98,8 @@ export function UserDashboard() {
                   Improve your typing speed and accuracy with interactive exercises
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm"
+              >
                 Start Practice
               </Button>
             </div>
@@ -136,7 +137,7 @@ export function UserDashboard() {
                   Test your skills with coding challenges
                 </p>
               </div>
-              <Button variant="outline" size="sm">
+              <Button variant={'outline'} size="sm" >
                 Solve Challenges
               </Button>
             </div>
