@@ -7,6 +7,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "backend:install": "npm install --prefix src/backend",
+    "dev:install": "npm install",
     "backend:dev": "nodemon --watch src/backend -e ts,json --exec tsx src/backend/server.ts",
     "backend:build": "tsc -p src/backend/tsconfig.json",
     "backend:all": "concurrently \"npm run backend:build\" \"npm run backend:start\"",
@@ -14,7 +16,8 @@
     "build:all":"concurrently \"npm run build\" \npm run backend:build\"",
     "dev:all": "concurrently \"npm run dev\" \"npm run backend:dev\"",
     "backend:init-db": "ts-node src/backend/scripts/initDb.ts",
-    "backend:test": "jest --config src/backend/jest.config.js"
+    "backend:test": "jest --config src/backend/jest.config.js",
+    "install:all":"concurrently \"npm run backend:install\" \"npm install\""
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
