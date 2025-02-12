@@ -37,7 +37,8 @@ export class DSAChallengeService {
         if (isCorrect) passed++;
         return { passed: isCorrect, input: testCase.input, expected: testCase.output, received: result };
       } catch (error) {
-        return { passed: false, input: testCase.input, expected: testCase.output, error: error.message };
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        return { passed: false, input: testCase.input, expected: testCase.output, error: errorMessage };
       }
     });
 
