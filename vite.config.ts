@@ -25,5 +25,7 @@ export default defineConfig({
     commonjsOptions: {
       include: [/node_modules/],
     },
+    outDir: 'dist',
+    sourcemap: true
   },
 });
