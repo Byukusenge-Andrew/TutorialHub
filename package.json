@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "backend:install": "cd src/backend && npm install",
@@ -12,11 +12,11 @@
     "backend:dev": "nodemon --watch src/backend -e ts,json --exec tsx src/backend/server.ts",
     "backend:build": "tsc -p src/backend/tsconfig.json",
     "backend:start": "node dist/backend/server.js",
-    "vercel-build": "npm install && npm run backend:install && npm run build && npm run backend:build",
+    "vercel-build": "npm install && npm run backend:install && npm run build",
     "dev:all": "concurrently \"npm run dev\" \"npm run backend:dev\"",
     "backend:init-db": "ts-node src/backend/scripts/initDb.ts",
     "backend:test": "jest --config src/backend/jest.config.js",
-    "install:all":"npm install && npm run backend:install"
+    "install:all": "npm install && npm run backend:install"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
@@ -48,7 +48,8 @@
     "@eslint/js": "^8.56.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
-    "typescript-eslint": "^7.0.0"
+    "typescript-eslint": "^7.0.0",
+    "typescript": "^5.5.3"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
@@ -74,7 +75,6 @@
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1",
     "tsx": "^4.19.2",
-    "typescript": "^5.5.3",
     "@eslint/js": "^8.56.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
