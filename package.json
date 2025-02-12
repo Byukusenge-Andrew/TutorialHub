@@ -15,7 +15,8 @@
     "vercel-build": "npm install && npm run backend:install && npm run build && npm run backend:build",
     "dev:all": "concurrently \"npm run dev\" \"npm run backend:dev\"",
     "backend:init-db": "ts-node src/backend/scripts/initDb.ts",
-    "backend:test": "jest --config src/backend/jest.config.js"
+    "backend:test": "jest --config src/backend/jest.config.js",
+    "install:all":"npm install && npm run backend:install"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
