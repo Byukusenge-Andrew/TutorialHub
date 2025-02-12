@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { LogIn, Mail, Lock } from 'lucide-react';

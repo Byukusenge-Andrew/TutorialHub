@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Navigation } from './Navigation';
 import { Footer } from './Footer';
 
-export function Layout() {
+export const Layout = () => {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -13,4 +13,4 @@ export function Layout() {
       <Footer />
     </div>
   );
-}
+};

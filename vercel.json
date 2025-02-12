@@ -23,8 +23,12 @@
       "dest": "src/backend/server.ts"
     },
     {
+      "src": "/assets/(.*)",
+      "dest": "/dist/assets/$1"
+    },
+    {
       "src": "/(.*)",
-      "dest": "/"
+      "dest": "/dist/index.html"
     }
   ]
 }

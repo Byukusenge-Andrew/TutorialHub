@@ -3,7 +3,7 @@ import { Tutorial, Progress, DSAChallenge, TutorialProgress, Section, TutorialRe
 import { create } from 'domain';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 // Helper function to handle API responses
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -62,21 +62,8 @@ export const api = {
 
   tutorials: {
     getAll: async () => {
-      try {
-        const response = await fetch(`${API_URL}/tutorials`, {
-          headers: getAuthHeader(),
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: TutorialResponse = await response.json();
-        return data.data.tutorials;
-      } catch (error) {
-        console.error('Failed to fetch tutorials:', error);
-        return [];
-      }
+      const response = await axios.get('/api/tutorials');
+      return response.data;
     },
      
     create: async (tutorialData: {
