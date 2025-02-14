@@ -5,27 +5,35 @@ import { catchAsync } from '../utils/catchAsync';
 
 class TypingStatsController {
   saveResult = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { wpm, accuracy, duration, characters, errors } = req.body;
-    
-    // Validate input
-    if (!wpm || !accuracy || !duration) {
-      throw new Error('Missing required fields');
+    try {
+      const { wpm, accuracy, duration, characters, errors } = req.body;
+      
+      // Validate input
+      if (!wpm || !accuracy || !duration) {
+        throw new Error('Missing required fields');
+      }
+
+      const stats = await TypingStats.create({
+        userId: req.user._id,
+        wpm: Math.round(wpm),
+        accuracy: Math.round(accuracy * 100) / 100,
+        duration,
+        characters,
+        errors,
+        date: new Date()
+      });
+
+      res.status(201).json({
+        status: 'success',
+        data: stats
+      });
+    } catch (error) {
+      console.error('Error saving typing result:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to save typing result'
+      });
     }
-
-    const stats = await TypingStats.create({
-      userId: req.user._id,
-      wpm: Math.round(wpm),
-      accuracy: Math.round(accuracy * 100) / 100,
-      duration,
-      characters,
-      errors,
-      date: new Date()
-    });
-
-    res.status(201).json({
-      status: 'success',
-      data: stats
-    });
   });
 
   getDashboardStats = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -185,45 +193,53 @@ class TypingStatsController {
   });
 
   getUserHistory = catchAsync(async (req: AuthRequest, res: Response) => {
-    // Get last 20 typing tests
-    const history = await TypingStats.find({ userId: req.user._id })
-      .sort('-date')
-      .limit(20)
-      .select('wpm accuracy duration date')
-      .lean();
+    try {
+      // Get last 20 typing tests
+      const history = await TypingStats.find({ userId: req.user._id })
+        .sort('-date')
+        .limit(20)
+        .select('wpm accuracy duration date')
+        .lean();
 
-    // Get aggregate stats
-    const stats = await TypingStats.aggregate([
-      { $match: { userId: req.user._id } },
-      {
-        $group: {
-          _id: null,
-          avgWpm: { $avg: '$wpm' },
-          avgAccuracy: { $avg: '$accuracy' },
-          bestWpm: { $max: '$wpm' },
-          totalTests: { $sum: 1 }
+      // Get aggregate stats
+      const stats = await TypingStats.aggregate([
+        { $match: { userId: req.user._id } },
+        {
+          $group: {
+            _id: null,
+            avgWpm: { $avg: '$wpm' },
+            avgAccuracy: { $avg: '$accuracy' },
+            bestWpm: { $max: '$wpm' },
+            totalTests: { $sum: 1 }
+          }
         }
-      }
-    ]);
+      ]);
 
-    // Format response
-    res.json({
-      status: 'success',
-      data: {
-        history: history.map(test => ({
-          wpm: Math.round(test.wpm),
-          accuracy: Math.round(test.accuracy * 100) / 100,
-          duration: test.duration,
-          date: test.date
-        })),
-        stats: stats[0] || {
-          avgWpm: 0,
-          avgAccuracy: 0,
-          bestWpm: 0,
-          totalTests: 0
+      // Format response
+      res.status(200).json({
+        status: 'success',
+        data: {
+          history: history.map(test => ({
+            wpm: Math.round(test.wpm),
+            accuracy: Math.round(test.accuracy * 100) / 100,
+            duration: test.duration,
+            date: test.date
+          })),
+          stats: stats[0] || {
+            avgWpm: 0,
+            avgAccuracy: 0,
+            bestWpm: 0,
+            totalTests: 0
+          }
         }
-      }
-    });
+      });
+    } catch (error) {
+      console.error('Error fetching user history:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to fetch typing history'
+      });
+    }
   });
 }
 

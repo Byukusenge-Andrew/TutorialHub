@@ -11,12 +11,19 @@ interface ApiResponse<T> {
   data: T;
 }
 
-interface TypingHistoryResponse {
-  data: {
+interface TypingHistoryData {
+  history: Array<{
     wpm: number;
     accuracy: number;
     date: string;
-  }[];
+    duration: number;
+  }>;
+  stats: {
+    avgWpm: number;
+    avgAccuracy: number;
+    bestWpm: number;
+    totalTests: number;
+  };
 }
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
@@ -163,24 +170,26 @@ export const api = {
       return handleResponse<{status: string, data: any}>(response);
     },
 
-    getHistory: async () => {
-      const response = await fetch(`${API_URL}/typing/history`, {
-        headers: getAuthHeader()
-      });
-      return handleResponse<{
-        history: Array<{
-          wpm: number,
-          accuracy: number,
-          date: string,
-          duration: number
-        }>,
-        stats: {
-          avgWpm: number,
-          avgAccuracy: number,
-          bestWpm: number,
-          totalTests: number
+    getHistory: async (): Promise<TypingHistoryData> => {
+      try {
+        const response = await fetch(`${API_URL}/typing/history`, {
+          headers: getAuthHeader()
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch typing history');
         }
-      }>(response);
+
+        const result = await handleResponse<{
+          status: string;
+          data: TypingHistoryData;
+        }>(response);
+
+        return result.data;
+      } catch (error) {
+        console.error('Error fetching typing history:', error);
+        throw error;
+      }
     },
 
     getAdminStats: async () => {
@@ -197,11 +206,26 @@ export const api = {
       return handleResponse(response);
     },
 
-    getUserHistory: async () => {
-      const response = await fetch(`${API_URL}/typing/history`, {
-        headers: getAuthHeader()
-      });
-      return handleResponse(response);
+    getUserHistory: async (): Promise<TypingHistoryData> => {
+      try {
+        const response = await fetch(`${API_URL}/typing/history`, {
+          headers: getAuthHeader()
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch user history');
+        }
+
+        const result = await handleResponse<{
+          status: string;
+          data: TypingHistoryData;
+        }>(response);
+
+        return result.data;
+      } catch (error) {
+        console.error('Error fetching user history:', error);
+        throw error;
+      }
     },
 
     getDashboardStats: async () => {

@@ -45,16 +45,15 @@ export function TypingPage() {
     queryKey: ['typing-stats'],
     queryFn: async () => {
       const historyResponse = await api.typing.getHistory();
-      const history = historyResponse.data;
-      const avgWpm = history.reduce((acc, curr) => acc + curr.wpm, 0) / history.length;
-      const avgAccuracy = history.reduce((acc, curr) => acc + curr.accuracy, 0) / history.length;
+      const avgWpm = historyResponse.history.reduce((acc, curr) => acc + curr.wpm, 0) / historyResponse.history.length;
+      const avgAccuracy = historyResponse.history.reduce((acc, curr) => acc + curr.accuracy, 0) / historyResponse.history.length;
 
       return {
-        recentTests: history,
+        recentTests: historyResponse.history,
         averages: {
           avgWpm,
           avgAccuracy,
-          totalTests: history.length
+          totalTests: historyResponse.history.length
         }
       };
     }
@@ -64,8 +63,8 @@ export function TypingPage() {
     mutationFn: (stats: TypingStats) => api.typing.saveResult({
       wpm: stats.wpm,
       accuracy: stats.accuracy,
-      time: stats.duration,
-      totalWords: Math.round(stats.characters / 5),
+      duration: stats.duration,
+      characters: Math.round(stats.characters / 5),
       errors: stats.errors
     }),
     onSuccess: () => {
