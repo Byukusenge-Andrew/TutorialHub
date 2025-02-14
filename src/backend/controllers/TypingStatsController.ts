@@ -5,14 +5,19 @@ import { catchAsync } from '../utils/catchAsync';
 
 class TypingStatsController {
   saveResult = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { wpm, accuracy, time, totalWords, errors } = req.body;
+    const { wpm, accuracy, duration, characters, errors } = req.body;
     
+    // Validate input
+    if (!wpm || !accuracy || !duration) {
+      throw new Error('Missing required fields');
+    }
+
     const stats = await TypingStats.create({
-      userId: req.user.id,
-      wpm,
-      accuracy,
-      duration: time,
-      characters: totalWords * 5,
+      userId: req.user._id,
+      wpm: Math.round(wpm),
+      accuracy: Math.round(accuracy * 100) / 100,
+      duration,
+      characters,
       errors,
       date: new Date()
     });
@@ -180,13 +185,16 @@ class TypingStatsController {
   });
 
   getUserHistory = catchAsync(async (req: AuthRequest, res: Response) => {
-    const stats = await TypingStats.find({ userId: req.user.id })
+    // Get last 20 typing tests
+    const history = await TypingStats.find({ userId: req.user._id })
       .sort('-date')
       .limit(20)
-      .select('wpm accuracy duration date');
+      .select('wpm accuracy duration date')
+      .lean();
 
-    const averages = await TypingStats.aggregate([
-      { $match: { userId: req.user.id } },
+    // Get aggregate stats
+    const stats = await TypingStats.aggregate([
+      { $match: { userId: req.user._id } },
       {
         $group: {
           _id: null,
@@ -198,13 +206,22 @@ class TypingStatsController {
       }
     ]);
 
+    // Format response
     res.json({
-      history: stats,
-      stats: averages[0] || {
-        avgWpm: 0,
-        avgAccuracy: 0,
-        bestWpm: 0,
-        totalTests: 0
+      status: 'success',
+      data: {
+        history: history.map(test => ({
+          wpm: Math.round(test.wpm),
+          accuracy: Math.round(test.accuracy * 100) / 100,
+          duration: test.duration,
+          date: test.date
+        })),
+        stats: stats[0] || {
+          avgWpm: 0,
+          avgAccuracy: 0,
+          bestWpm: 0,
+          totalTests: 0
+        }
       }
     });
   });

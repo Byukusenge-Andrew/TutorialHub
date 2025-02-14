@@ -41,6 +41,8 @@ function App() {
               <UserDashboard />
             </ProtectedRoute>
           } />
+          <Route path="/community" element={<Community/>}/>
+
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDashboard />

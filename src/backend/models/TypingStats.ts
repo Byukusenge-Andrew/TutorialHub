@@ -11,17 +11,49 @@ export interface ITypingStats extends Document {
 }
 
 const TypingStatsSchema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  wpm: { type: Number, required: true },
-  accuracy: { type: Number, required: true },
-  duration: { type: Number, required: true }, // in seconds
-  characters: { type: Number, required: true },
-  errors: { type: Number, required: true },
-  date: { type: Date, default: Date.now }
+  userId: { 
+    type: Schema.Types.ObjectId, 
+    ref: 'User', 
+    required: true,
+    index: true 
+  },
+  wpm: { 
+    type: Number, 
+    required: true,
+    min: 0 
+  },
+  accuracy: { 
+    type: Number, 
+    required: true,
+    min: 0,
+    max: 100 
+  },
+  duration: { 
+    type: Number, 
+    required: true,
+    min: 0 
+  },
+  characters: { 
+    type: Number, 
+    required: true,
+    min: 0 
+  },
+  errors: { 
+    type: Number, 
+    required: true,
+    min: 0 
+  },
+  date: { 
+    type: Date, 
+    default: Date.now,
+    index: true 
+  }
 });
 
-// Add indexes for better query performance
+// Compound index for efficient user history queries
 TypingStatsSchema.index({ userId: 1, date: -1 });
-TypingStatsSchema.index({ wpm: -1 }); // For leaderboard queries
+
+// Index for leaderboard queries
+TypingStatsSchema.index({ wpm: -1 });
 
 export default model<ITypingStats>('TypingStats', TypingStatsSchema); 

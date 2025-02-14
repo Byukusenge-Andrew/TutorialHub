@@ -2,6 +2,7 @@ import { User } from '@/types/auth';
 import { Tutorial, Progress, DSAChallenge, TutorialProgress, Section, TutorialResponse } from '@/types';
 import { create } from 'domain';
 import axios from 'axios';
+import { Post } from '@/types/community';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -144,7 +145,13 @@ export const api = {
   },
 
   typing: {
-    saveResult: async (data: any) => {
+    saveResult: async (data: {
+      wpm: number,
+      accuracy: number, 
+      duration: number,
+      characters: number,
+      errors: number
+    }) => {
       const response = await fetch(`${API_URL}/typing/results`, {
         method: 'POST',
         headers: {
@@ -153,14 +160,27 @@ export const api = {
         },
         body: JSON.stringify(data)
       });
-      return handleResponse(response);
+      return handleResponse<{status: string, data: any}>(response);
     },
 
-    getHistory: async (): Promise<TypingHistoryResponse> => {
+    getHistory: async () => {
       const response = await fetch(`${API_URL}/typing/history`, {
         headers: getAuthHeader()
       });
-      return handleResponse<TypingHistoryResponse>(response);
+      return handleResponse<{
+        history: Array<{
+          wpm: number,
+          accuracy: number,
+          date: string,
+          duration: number
+        }>,
+        stats: {
+          avgWpm: number,
+          avgAccuracy: number,
+          bestWpm: number,
+          totalTests: number
+        }
+      }>(response);
     },
 
     getAdminStats: async () => {
@@ -299,14 +319,14 @@ export const api = {
       const response = await fetch(`${API_URL}/community/posts`, {
         headers: getAuthHeader(),
       });
-      return handleResponse(response);
+      return handleResponse<{ status: string; data: Post[] }>(response);
     },
 
     getPost: async (id: string) => {
       const response = await fetch(`${API_URL}/community/posts/${id}`, {
         headers: getAuthHeader(),
       });
-      return handleResponse(response);
+      return handleResponse<{ status: string; data: Post }>(response);
     },
 
     createPost: async (data: { title: string; content: string; tags: string[] }) => {
@@ -318,7 +338,7 @@ export const api = {
         },
         body: JSON.stringify(data),
       });
-      return handleResponse(response);
+      return handleResponse<{ status: string; data: Post }>(response);
     },
 
     addComment: async (postId: string, content: string) => {

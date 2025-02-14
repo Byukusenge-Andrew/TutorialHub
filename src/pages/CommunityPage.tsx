@@ -1,34 +1,31 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Plus, MessageSquare, Heart, MessageCircle } from 'lucide-react';
+import { ReactElement, JSXElementConstructor, ReactNode, ReactPortal, Key } from 'react';
 
 interface Post {
   _id: string;
   title: string;
   content: string;
   authorId: {
+    _id: string;
     name: string;
   };
   likes: number;
-  comments: Array<{
-    content: string;
-    authorId: {
-      name: string;
-    };
-    createdAt: string;
-  }>;
+  comments: Comment[];
   tags: string[];
   createdAt: string;
 }
 
 export function CommunityPage() {
-  const { data: posts, isLoading } = useQuery<Post[]>({
+  const { data: response, isLoading } = useQuery({
     queryKey: ['community-posts'],
-    queryFn: () => api.community.getPosts().then((response) => response as Post[])
+    queryFn: () => api.community.getPosts()
   });
+
+  const posts = response?.data;
 
   if (isLoading) {
     return (
@@ -54,7 +51,7 @@ export function CommunityPage() {
         {posts?.map((post) => (
           <Link
             key={post._id}
-            to={`/community/${post._id}`}
+            to={`/community/post/${post._id}`}
             className="block bg-card hover:bg-card/80 rounded-lg p-6 transition-all duration-200 border border-border"
           >
             <div className="space-y-4">
@@ -75,7 +72,7 @@ export function CommunityPage() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag, index) => (
+                {post.tags.map((tag: string | number | boolean | ReactElement<any, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | null | undefined, index: Key | null | undefined) => (
                   <span
                     key={index}
                     className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"

@@ -116,7 +116,7 @@ class DashboardController {
   });
 
   getStudentStats = catchAsync(async (req: AuthRequest, res: Response) => {
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const [tutorials, typing, dsa, community] = await Promise.all([
       // Get tutorial stats
@@ -167,91 +167,60 @@ class DashboardController {
 
       // Get community stats
       Promise.all([
-        // Get post stats
+        Post.find({ authorId: userId }).countDocuments(),
         Post.aggregate([
-          { $match: { authorId: userId } },
-          {
-            $group: {
-              _id: null,
-              posts: { $sum: 1 },
-              likes: { $sum: '$likes' }
-            }
-          }
-        ]),
-
-        // Get comment stats
-        Post.aggregate([
+          { $match: { 'comments.authorId': userId } },
           { $unwind: '$comments' },
           { $match: { 'comments.authorId': userId } },
-          {
-            $group: {
-              _id: null,
-              comments: { $sum: 1 }
-            }
-          }
+          { $count: 'count' }
         ]),
-
-        // Get recent activity
-        Post.aggregate([
-          {
-            $facet: {
-              posts: [
-                { $match: { authorId: userId } },
-                { $sort: { createdAt: -1 } },
-                { $limit: 5 },
-                {
-                  $project: {
-                    type: { $literal: 'post' },
-                    title: 1,
-                    date: '$createdAt'
-                  }
-                }
-              ],
-              comments: [
-                { $unwind: '$comments' },
-                { $match: { 'comments.authorId': userId } },
-                { $sort: { 'comments.createdAt': -1 } },
-                { $limit: 5 },
-                {
-                  $project: {
-                    type: { $literal: 'comment' },
-                    title: 1,
-                    date: '$comments.createdAt'
-                  }
-                }
-              ]
-            }
-          },
-          {
-            $project: {
-              activity: {
-                $slice: [
-                  { $sortArray: { 
-                    input: { $concatArrays: ['$posts', '$comments'] },
-                    sortBy: { date: -1 }
-                  }},
-                  5
-                ]
-              }
-            }
-          }
-        ])
+        Post.find({ authorId: userId })
+          .sort('-createdAt')
+          .limit(5)
+          .populate('authorId', 'name')
+          .lean()
       ])
     ]);
 
-    res.json({
-      tutorials: tutorials[0] || { completed: 0, inProgress: 0, totalTime: 0 },
-      typing: typing[0] || { avgWpm: 0, avgAccuracy: 0, bestWpm: 0, totalTests: 0 },
-      dsa: {
-        solved: dsa[0]?.solved || 0,
-        totalAttempted: dsa[0]?.totalAttempted || 0,
-        successRate: dsa[0] ? (dsa[0].solved / dsa[0].totalAttempted) * 100 : 0
+    const recentActivity = await Post.aggregate([
+      {
+        $match: {
+          $or: [
+            { authorId: userId },
+            { 'comments.authorId': userId }
+          ]
+        }
       },
-      community: {
-        posts: community[0][0]?.posts || 0,
-        comments: community[1][0]?.comments || 0,
-        likes: community[0][0]?.likes || 0,
-        recentActivity: community[2][0]?.activity || []
+      {
+        $project: {
+          type: { $cond: [{ $eq: ['$authorId', userId] }, 'post', 'comment'] },
+          title: '$title',
+          date: '$createdAt'
+        }
+      },
+      { $sort: { date: -1 } },
+      { $limit: 5 }
+    ]);
+
+    res.json({
+      status: 'success',
+      data: {
+        tutorials: tutorials[0] || { completed: 0, inProgress: 0, totalTime: 0 },
+        typing: typing[0] || { avgWpm: 0, avgAccuracy: 0, bestWpm: 0, totalTests: 0 },
+        dsa: {
+          solved: dsa[0]?.solved || 0,
+          totalAttempted: dsa[0]?.totalAttempted || 0,
+          successRate: dsa[0] ? (dsa[0].solved / dsa[0].totalAttempted) * 100 : 0
+        },
+        community: {
+          posts: community[0] || 0,
+          comments: community[1]?.[0]?.count || 0,
+          recentActivity: recentActivity.map(activity => ({
+            type: activity.type,
+            title: activity.title,
+            date: activity.date
+          }))
+        }
       }
     });
   });
