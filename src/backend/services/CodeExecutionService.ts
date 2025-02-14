@@ -1,5 +1,6 @@
 import { VM } from 'vm2';
 import { performance } from 'perf_hooks';
+import { TestCase } from '../models/DSAChallenge';
 
 interface ExecutionResult {
   passed: boolean;
@@ -76,14 +77,36 @@ export class CodeExecutionService {
     }
   }
 
-  static async executeCode(code: string, language: string, testCases: any[]): Promise<ExecutionResult> {
-    switch (language) {
-      case 'javascript':
-      case 'typescript':
-        return this.executeJavaScript(code, testCases);
-      // Add support for other languages here
-      default:
-        throw new Error(`Unsupported language: ${language}`);
+  static async executeCode(
+    code: string,
+    language: string,
+    testCases: TestCase[]
+  ): Promise<{ passed: boolean; executionTime: number; memory: number; failedTestCase?: number }> {
+    try {
+      const startTime = Date.now();
+      
+      switch (language) {
+        case 'javascript':
+        case 'typescript':
+          const result = await this.executeJavaScript(code, testCases);
+          const executionTime = Date.now() - startTime;
+          return {
+            passed: result.passed,
+            executionTime,
+            memory: result.memory,
+            failedTestCase: result.failedTestCase
+          };
+        // Add support for other languages here
+        default:
+          throw new Error(`Unsupported language: ${language}`);
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Code execution error:', error.message);
+      } else {
+        console.error('Unknown code execution error:', error);
+      }
+      throw new Error('Code execution failed');
     }
   }
 } 

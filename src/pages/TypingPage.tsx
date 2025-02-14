@@ -130,13 +130,15 @@ export function TypingPage() {
 
     setCurrentCharIndex(newInput.length);
 
+    // When user finishes typing
     if (newInput.length === text.length) {
       const stats = calculateStats();
       if (stats) {
         setCurrentStats(stats);
+        // Immediately save the result
         saveMutation.mutate(stats);
+        setIsFinished(true);
       }
-      setIsFinished(true);
     }
   };
 
