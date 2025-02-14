@@ -5,15 +5,26 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
-// Helper function to handle API responses
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'API request failed');
-  }
-  return response.json();
+interface ApiResponse<T> {
+  status: string;
+  data: T;
 }
 
+interface TypingHistoryResponse {
+  data: {
+    wpm: number;
+    accuracy: number;
+    date: string;
+  }[];
+}
+
+const handleResponse = async <T>(response: Response): Promise<T> => {
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || 'Something went wrong');
+  }
+  return data;
+};
 
 function getAuthHeader(): HeadersInit {
   const token = localStorage.getItem('auth-storage')
@@ -133,74 +144,108 @@ export const api = {
   },
 
   typing: {
-    saveResult: async (stats: {
-      wpm: number;
-      accuracy: number;
-      time: number;
-      totalWords: number;
-      errors: number;
-    }) => {
+    saveResult: async (data: any) => {
       const response = await fetch(`${API_URL}/typing/results`, {
         method: 'POST',
         headers: {
           ...getAuthHeader(),
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(stats),
+        body: JSON.stringify(data)
       });
-      return handleResponse<{ success: boolean }>(response);
+      return handleResponse(response);
     },
 
-    getHistory: async () => {
+    getHistory: async (): Promise<TypingHistoryResponse> => {
       const response = await fetch(`${API_URL}/typing/history`, {
-        headers: { ...getAuthHeader() },
+        headers: getAuthHeader()
       });
-      return handleResponse<{
-        wpm: number;
-        accuracy: number;
-        time: number;
-        date: string;
-      }[]>(response);
+      return handleResponse<TypingHistoryResponse>(response);
     },
+
+    getAdminStats: async () => {
+      const response = await fetch(`${API_URL}/typing/admin/stats`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse(response);
+    },
+
+    getLeaderboard: async () => {
+      const response = await fetch(`${API_URL}/typing/leaderboard`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse(response);
+    },
+
+    getUserHistory: async () => {
+      const response = await fetch(`${API_URL}/typing/history`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse(response);
+    },
+
+    getDashboardStats: async () => {
+      const response = await fetch(`${API_URL}/typing/dashboard-stats`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse(response);
+    }
   },
 
   dsa: {
-    createChallenge: async (challenge: DSAChallenge) => {
-      try {	
-        const response = await fetch(`${API_URL}/dsa/challenges`, {
-          method: 'POST',
-        headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-        body: JSON.stringify(challenge),
-        });
-        return handleResponse<DSAChallenge>(response);
-      } catch (error) {
-        console.error('Failed to create challenge:', error);
-        return { success: false, message: 'Failed to create challenge' };
-      }
+    getChallenges: async (filters?: { difficulty?: string; category?: string; tag?: string }) => {
+      const params = new URLSearchParams(filters);
+      const response = await fetch(`${API_URL}/dsa/challenges?${params}`);
+      const data = await handleResponse<{ data: any }>(response);
+      return data.data;
     },
 
-    getChallenges: async () => {
-      const response = await fetch(`${API_URL}/dsa/challenges`, {
-        headers: getAuthHeader() as HeadersInit,
-      });
-      const data = await handleResponse<{
-        status: string;
-        data: { challenges: DSAChallenge[] }
-      }>(response);
-      return data;
+    getChallenge: async (id: string) => {
+      const response = await fetch(`${API_URL}/dsa/challenges/${id}`);
+      const data = await handleResponse<{ data: any }>(response);
+      return data.data;
     },
 
-    submitSolution: async (challengeId: string, solution: string) => {
-      const response = await fetch(`${API_URL}/dsa/challenges/${challengeId}/submit`, {
+    submitSolution: async (id: string, code: string, language: string) => {
+      const response = await fetch(`${API_URL}/dsa/challenges/${id}/submit`, {
         method: 'POST',
         headers: {
           ...getAuthHeader(),
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ solution }),
+        body: JSON.stringify({ code, language })
       });
-      return handleResponse<{ success: boolean; results: any[] }>(response);
+      return handleResponse(response);
     },
+
+    createChallenge: async (data: {
+      title: string;
+      description: string;
+      difficulty: string;
+      category: string;
+      tags: string[];
+      starterCode: {
+        javascript: string;
+        typescript: string;
+        python: string;
+      };
+      testCases: {
+        input: any;
+        output: any;
+        explanation?: string;
+        isHidden?: boolean;
+      }[];
+    }) => {
+      const response = await fetch(`${API_URL}/dsa/challenges`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      return handleResponse(response);
+    }
   },
 
   admin: {
@@ -247,7 +292,71 @@ export const api = {
       });
       return handleResponse<{ progress: any[] }>(response);
     },
-  }
+  },
+
+  community: {
+    getPosts: async () => {
+      const response = await fetch(`${API_URL}/community/posts`, {
+        headers: getAuthHeader(),
+      });
+      return handleResponse(response);
+    },
+
+    getPost: async (id: string) => {
+      const response = await fetch(`${API_URL}/community/posts/${id}`, {
+        headers: getAuthHeader(),
+      });
+      return handleResponse(response);
+    },
+
+    createPost: async (data: { title: string; content: string; tags: string[] }) => {
+      const response = await fetch(`${API_URL}/community/posts`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return handleResponse(response);
+    },
+
+    addComment: async (postId: string, content: string) => {
+      const response = await fetch(`${API_URL}/community/posts/${postId}/comments`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ content }),
+      });
+      return handleResponse(response);
+    },
+
+    likePost: async (postId: string) => {
+      const response = await fetch(`${API_URL}/community/posts/${postId}/like`, {
+        method: 'POST',
+        headers: getAuthHeader(),
+      });
+      return handleResponse(response);
+    },
+  },
+
+  dashboard: {
+    getStats: async () => {
+      const response = await fetch(`${API_URL}/dashboard/stats`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse(response);
+    },
+
+    getStudentStats: async () => {
+      const response = await fetch(`${API_URL}/dashboard/student-stats`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse(response);
+    }
+  },
 };
 
 const progress = {

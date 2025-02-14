@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
-import { BookOpen,  Users, Star, Keyboard, BrainCog, BrainCircuitIcon } from 'lucide-react';
+import { BookOpen,  Users, Star, Keyboard,  BrainCircuitIcon } from 'lucide-react';
 import { api } from '@/services/api';
 import { useEffect, useState } from 'react';
 import { Tutorial } from '../types';
-import { Button } from '@/components/ui/button';
 
 export function Home() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
@@ -70,25 +69,25 @@ export function Home() {
 
       <section className="grid md:grid-cols-3 gap-8 ">
         <Link to={"/typing"} >
-        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65 p-6 rounded-lg shadow-lg text-center">
+        <div className="bg-slate-200/80  hover:bg-slate-300 hover:dark:bg-gray-900/20 p-6 rounded-lg shadow-lg text-center">
           <Keyboard className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Practice Typing</h2>
           <p className="text-gray-600">Improve your typing speed and accuracy with interactive exercises</p>
         </div></Link>
         <Link to={"/tutorials"}>
-        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200  hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-lg text-center">
+        <div className="bg-slate-200/80  hover:bg-slate-200  hover:dark:bg-gray-900/20  p-6 rounded-lg shadow-lg text-center">
           <BookOpen className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Written Guides</h2>
           <p className="text-gray-600">Detailed step-by-step instructions for every skill level</p>
         </div></Link>
         <Link to={"/community"}>
-        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-lg text-center">
+        <div className="bg-slate-200/80  hover:bg-slate-200 hover:dark:bg-gray-900/20  p-6 rounded-lg shadow-lg text-center">
           <Users className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Community</h2>
           <p className="text-gray-600">Join discussions and share knowledge with fellow learners</p>
         </div></Link>
         <Link to={"/community"}>
-        <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  p-6 rounded-lg shadow-lg text-center">
+        <div className="bg-slate-200/80  hover:bg-slate-200 hover:dark:bg-gray-900/20  p-6 rounded-lg shadow-lg text-center">
           <BrainCircuitIcon className="h-12 w-12 mx-auto mb-4 text-blue-600" />
           <h2 className="text-xl font-semibold mb-2">Challenges</h2>
           <p className="text-gray-600">Test your knowledge and problem-solving skills with our coding challenges</p>

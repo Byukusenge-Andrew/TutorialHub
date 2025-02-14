@@ -8,11 +8,21 @@ const prompts = [
   "Each moment in life is an opportunity to learn and grow. The typing test you're undertaking is just one small challenge in the grand scheme of things. Whether you excel or stumble, it's all part of the journey to becoming a more skilled and confident individual",
 ];
 
-export function useTypingPrompt() {
-  const [currentPrompt] = useState(() => {
+interface UseTypingPrompt {
+  currentPrompt: string;
+  setNewPrompt: () => void;
+}
+
+export function useTypingPrompt(): UseTypingPrompt {
+  const [currentPrompt, setCurrentPrompt] = useState(() => {
     const randomIndex = Math.floor(Math.random() * prompts.length);
     return prompts[randomIndex];
   });
 
-  return { currentPrompt };
+  const setNewPrompt = () => {
+    const randomIndex = Math.floor(Math.random() * prompts.length);
+    setCurrentPrompt(prompts[randomIndex]);
+  };
+
+  return { currentPrompt, setNewPrompt };
 }

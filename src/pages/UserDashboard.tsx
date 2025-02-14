@@ -1,8 +1,8 @@
-import React from 'react';
+
 import { useAuthStore } from '@/store/auth-store';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Link, Navigate } from 'react-router-dom';
+import { Link} from 'react-router-dom';
 import { 
   User, Settings, BookOpen, Timer, Code2, 
   Keyboard, BookOpenCheck, BrainCircuit 

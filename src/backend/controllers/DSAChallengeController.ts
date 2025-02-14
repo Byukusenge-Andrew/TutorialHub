@@ -1,47 +1,103 @@
 import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
-import DSAChallengeService from '../services/DSAChallengeService';
+import DSAChallenge from '../models/DSAChallenge';
+import { CodeExecutionService } from '../services/CodeExecutionService';
 import { catchAsync } from '../utils/catchAsync';
 
-export class DSAChallengeController {
+class DSAChallengeController {
   getChallenges = catchAsync(async (req: Request, res: Response) => {
-    const challenges = await DSAChallengeService.getChallenges();
-    res.status(200).json({
+    const { difficulty, category, tag } = req.query;
+    const query: any = {};
+
+    if (difficulty) query.difficulty = difficulty;
+    if (category) query.category = category;
+    if (tag) query.tags = tag;
+
+    const challenges = await DSAChallenge.find(query)
+      .select('-testCases.output -submissions')
+      .populate('authorId', 'name')
+      .sort('-createdAt');
+
+    res.json({
       status: 'success',
-      data: {
-        challenges
-      }
+      data: challenges
     });
   });
 
   getChallenge = catchAsync(async (req: Request, res: Response) => {
-    const challenge = await DSAChallengeService.getChallengeById(req.params.id);
-    res.status(200).json({
-      status: 'success',
-      data: challenge
-    });
-  });
+    const challenge = await DSAChallenge.findById(req.params.id)
+      .populate('authorId', 'name')
+      .populate('submissions.userId', 'name');
 
-  createChallenge = catchAsync(async (req: AuthRequest, res: Response) => {
-    const challenge = await DSAChallengeService.createChallenge({
-      ...req.body,
-      authorId: req.user.id
-    });
-    res.status(201).json({
+    if (!challenge) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Challenge not found'
+      });
+    }
+
+    // Only show non-hidden test cases to users
+    const visibleTestCases = challenge.testCases.filter(tc => !tc.isHidden);
+
+    res.json({
       status: 'success',
-      data: challenge
+      data: {
+        ...challenge.toObject(),
+        testCases: visibleTestCases
+      }
     });
   });
 
   submitSolution = catchAsync(async (req: AuthRequest, res: Response) => {
-    const result = await DSAChallengeService.submitSolution(
-      req.params.id,
-      req.body.solution,
-      req.user.id
+    const { code, language } = req.body;
+    const challenge = await DSAChallenge.findById(req.params.id);
+
+    if (!challenge) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Challenge not found'
+      });
+    }
+
+    const result = await CodeExecutionService.executeCode(
+      code,
+      language,
+      challenge.testCases
     );
-    res.status(200).json({
+
+    // Update challenge statistics
+    challenge.totalSubmissions += 1;
+    if (result.passed) {
+      challenge.successfulSubmissions += 1;
+    }
+    challenge.successRate = (challenge.successfulSubmissions / challenge.totalSubmissions) * 100;
+
+    // Record submission
+    challenge.submissions.push({
+      userId: req.user.id,
+      code,
+      language,
+      ...result,
+      createdAt: new Date()
+    });
+
+    await challenge.save();
+
+    res.json({
       status: 'success',
       data: result
+    });
+  });
+
+  createChallenge = catchAsync(async (req: AuthRequest, res: Response) => {
+    const challenge = await DSAChallenge.create({
+      ...req.body,
+      authorId: req.user.id
+    });
+
+    res.status(201).json({
+      status: 'success',
+      data: challenge
     });
   });
 }

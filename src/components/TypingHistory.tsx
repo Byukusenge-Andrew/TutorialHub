@@ -1,81 +1,62 @@
-import { useTypingStore } from '@/store/typing-store';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend
-} from 'recharts';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/services/api';
+import { StatCard } from '@/components/ui/stat-card';
+import { TypingHistoryResponse } from '@/types/typing';
 
 export function TypingHistory() {
-  const { history } = useTypingStore();
+  const { data: response, isLoading } = useQuery<TypingHistoryResponse>({
+    queryKey: ['typing-history'],
+    queryFn: () => api.typing.getHistory().then(response => response as unknown as TypingHistoryResponse)
+  });
 
-  const chartData = [...history]
-    .reverse()
-    .map((stat, index) => ({
-      attempt: index + 1,
-      wpm: stat.wpm,
-      accuracy: stat.accuracy
-    }));
+  if (isLoading) return <div>Loading...</div>;
+
+  const data = response?.data;
 
   return (
-    <div className="space-y-8">
-      <div className="h-[300px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis 
-              dataKey="attempt" 
-              label={{ value: 'Attempts', position: 'bottom' }}
-              className="text-muted-foreground"
-            />
-            <YAxis className="text-muted-foreground" />
-            <Tooltip />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="wpm"
-              name="WPM"
-              stroke="#2563eb"
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="accuracy"
-              name="Accuracy %"
-              stroke="#16a34a"
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+    <div className="space-y-6">
+      {/* Stats Summary */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard 
+          title="High Score" 
+          value={data?.stats.highScore ?? 0} 
+        />
+        <StatCard 
+          title="Avg WPM" 
+          value={Math.round(data?.stats.avgWpm ?? 0)} 
+        />
+        <StatCard 
+          title="Avg Accuracy" 
+          value={`${Math.round(data?.stats.avgAccuracy ?? 0)}%`} 
+        />
+        <StatCard 
+          title="Total Tests" 
+          value={data?.stats.totalTests ?? 0} 
+        />
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Attempt</TableHead>
-            <TableHead>WPM</TableHead>
-            <TableHead>Accuracy</TableHead>
-            <TableHead>Time</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {[...history].reverse().map((stat, index) => (
-            <TableRow key={index}>
-              <TableCell>{index + 1}</TableCell>
-              <TableCell>{stat.wpm}</TableCell>
-              <TableCell>{stat.accuracy}%</TableCell>
-              <TableCell>{stat.time}s</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+      {/* Recent Tests */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Recent Tests</h3>
+        {data?.records.map((record, index) => (
+          <div key={index} className="flex justify-between items-center p-4 bg-card rounded-lg">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {record.date ? new Date(record.date).toLocaleDateString() : 'N/A'}
+              </p>
+              <p className="font-medium">{record.wpm} WPM</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Score</p>
+              <p className="font-medium">{record.score}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">Accuracy</p>
+              <p className="font-medium">{record.accuracy}%</p>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 } 

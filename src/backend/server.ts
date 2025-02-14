@@ -6,6 +6,8 @@ import authRoutes from './routes/auth';
 import tutorialRoutes from './routes/tutorials';
 import progressRoutes from './routes/progress';
 import dsaRoutes from './routes/dsa';
+import communityRoutes from './routes/community';
+import typingRoutes from './routes/typing';
 
 dotenv.config();
 
@@ -17,10 +19,12 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
+app.use('/api/typing', typingRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/tutorials', tutorialRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/dsa', dsaRoutes);
+app.use('/api/community', communityRoutes);
 app.use('/api/tutorials/create', tutorialRoutes);
 
 // Health check

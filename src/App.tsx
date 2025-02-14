@@ -22,6 +22,10 @@ import { AdminTutorials } from './pages/admin/AdminTutorials';
 import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { About } from './pages/static/About';
+import { Community } from './pages/Community';
+import { CreatePost } from './pages/CreatePost';
+import { PostDetail } from './pages/PostDetail';
+import { CommunityPage } from '@/pages/CommunityPage';
 
 function App() {
   return (
@@ -73,6 +77,17 @@ function App() {
           } />
           <Route path="dsa/create" element={<CreateDSAChallenge />} />
           <Route path="tutorials/create" element={<CreateTutorial />} />
+          <Route path="/community" element={
+            <ProtectedRoute>
+              <CommunityPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/community/post/create" element={
+            <ProtectedRoute>
+              <CreatePost />
+            </ProtectedRoute>
+          } />
+          <Route path="/community/post/:id" element={<PostDetail />} />
         </Route>
       </Routes>
     </AuthProvider>

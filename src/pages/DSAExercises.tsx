@@ -1,119 +1,180 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Plus } from 'lucide-react';
-import { useAuthStore } from '../store/auth-store';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
-import { DSAChallenge } from '@/types';
+import { Search, Filter, Code2, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/store/auth-store';
+
+interface DSAChallenge {
+  _id: string;
+  title: string;
+  description: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  category: string;
+  tags: string[];
+  successRate: number;
+  totalSubmissions: number;
+  authorId: {
+    name: string;
+  };
+}
+
+interface ChallengesResponse {
+  status: string;
+  data: {
+    challenges: DSAChallenge[];
+  };
+}
 
 export function DSAExercises() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [difficulty, setDifficulty] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
-  const [challenges, setChallenges] = useState<DSAChallenge[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuthStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  useEffect(() => {
-    const loadChallenges = async () => {
-      try {
-        setIsLoading(true);
-        const response = await api.dsa.getChallenges();
-        setChallenges(response.data?.challenges || []);
-      } catch (error) {
-        console.error('Failed to load challenges:', error);
-        setChallenges([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    loadChallenges();
-  }, []);
-
-  const filteredChallenges = challenges.filter((challenge: DSAChallenge) => {
-    const matchesSearch = challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      challenge.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDifficulty = difficulty === 'all' || challenge.difficulty === difficulty;
-    return matchesSearch && matchesDifficulty;
+  const { data: challenges, isLoading } = useQuery<DSAChallenge[]>({
+    queryKey: ['dsa-challenges', selectedDifficulty, selectedCategory],
+    queryFn: () => api.dsa.getChallenges({
+      difficulty: selectedDifficulty === 'all' ? undefined : selectedDifficulty,
+      category: selectedCategory === 'all' ? undefined : selectedCategory
+    }),
+    refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  console.log(filteredChallenges);
+  const categories = ['all', 'arrays', 'strings', 'linked-lists', 'trees', 'graphs', 'dynamic-programming'];
+  const difficulties = ['all', 'easy', 'medium', 'hard'];
+
+  const filteredChallenges = challenges?.filter(challenge => 
+    challenge.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    challenge.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case 'easy': return 'text-green-500 bg-green-500/10';
+      case 'medium': return 'text-yellow-500 bg-yellow-500/10';
+      case 'hard': return 'text-red-500 bg-red-500/10';
+      default: return 'text-gray-500 bg-gray-500/10';
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">DSA Challenges</h1>
         {user?.role === 'admin' && (
-          <Link
-            to="/dsa/create"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Create Challenge
-          </Link>
+          <Button asChild>
+            <Link to="/dsa/create" className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Create Challenge
+            </Link>
+          </Button>
         )}
       </div>
 
-      <div className="flex gap-4 mb-6">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search challenges..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
-          />
+      <div className="flex flex-col md:flex-row gap-6 mb-8">
+        <div className="w-full md:w-64">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search challenges..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-border rounded-md bg-background"
+            />
+          </div>
         </div>
-        <select
-          value={difficulty}
-          onChange={(e) => setDifficulty(e.target.value as any)}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800"
-        >
-          <option value="all">All Difficulties</option>
-          <option value="easy">Easy</option>
-          <option value="medium">Medium</option>
-          <option value="hard">Hard</option>
-        </select>
+
+        <div className="flex gap-4">
+          <select
+            value={selectedDifficulty}
+            onChange={(e) => setSelectedDifficulty(e.target.value)}
+            className="px-4 py-2 border border-border rounded-md bg-background"
+          >
+            {difficulties.map(difficulty => (
+              <option key={difficulty} value={difficulty}>
+                {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-2 border border-border rounded-md bg-background"
+          >
+            {categories.map(category => (
+              <option key={category} value={category}>
+                {category.split('-').map(word => 
+                  word.charAt(0).toUpperCase() + word.slice(1)
+                ).join(' ')}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid gap-6">
-        {filteredChallenges.map((challenge) => (
+        {filteredChallenges?.map((challenge) => (
           <Link
             key={challenge._id}
             to={`/dsa/${challenge._id}`}
-            className="block bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+            className="block bg-card hover:bg-card/80 rounded-lg p-6 shadow-md transition-all duration-200 border border-border"
           >
             <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-xl font-semibold mb-2">{challenge.title}</h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">{challenge.title}</h2>
+                <p className="text-muted-foreground line-clamp-2">
                   {challenge.description}
                 </p>
-                <div className="flex items-center space-x-4">
-                  <span className={`px-2 py-1 rounded-full text-sm ${
-                    challenge.difficulty === 'easy' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                    challenge.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                    'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                  }`}>
-                    {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
-                  </span>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">
-                    Success Rate: {challenge.successRate}%
-                  </span>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>By {challenge.authorId.name}</span>
+                  <span>•</span>
+                  <span>{challenge.totalSubmissions} submissions</span>
+                  <span>•</span>
+                  <span>{challenge.successRate.toFixed(1)}% success rate</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                {challenge.tags.map((tag, index) => (
-                  <span
-                    key={`${challenge._id}-${tag}-${index}`}
-                    className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-400 rounded-full text-sm"
-                  >
-                    {tag}
-                  </span>
-                ))}
+
+              <div className="flex flex-col items-end gap-4">
+                <span
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${getDifficultyColor(
+                    challenge.difficulty
+                  )}`}
+                >
+                  {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
+                </span>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  {challenge.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           </Link>
         ))}
       </div>
+
+      {filteredChallenges?.length === 0 && (
+        <div className="text-center py-10">
+          <p className="text-muted-foreground">No challenges found.</p>
+        </div>
+      )}
     </div>
   );
 }

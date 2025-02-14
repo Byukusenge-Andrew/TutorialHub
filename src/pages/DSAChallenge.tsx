@@ -1,267 +1,247 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import Editor from '@monaco-editor/react';
-import { Play, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
-import { useDSAStore } from '../store/dsa-store';
-import { TestCaseDisplay } from '../components/TestCaseDisplay';
-import { DSAChallenge as DSAChallengeType, TestCase } from '@/types';
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Play, Check, X } from 'lucide-react';
+import Editor from '@monaco-editor/react';
+import { useAuthStore } from '@/store/auth-store';
+
+interface TestCase {
+  input: any;
+  output: any;
+  explanation?: string;
+}
+
+interface Challenge {
+  _id: string;
+  title: string;
+  description: string;
+  difficulty: string;
+  category: string;
+  tags: string[];
+  starterCode: {
+    javascript: string;
+    typescript: string;
+    python: string;
+  };
+  testCases: TestCase[];
+  successRate: number;
+  authorId: {
+    name: string;
+  };
+}
 
 interface TestResult {
   passed: boolean;
-  input: any;
-  expected: any;
-  received: any;
+  executionTime: number;
+  memory: number;
   error?: string;
+  failedTestCase?: number;
+  output?: any;
 }
 
-const LANGUAGE_TEMPLATES = {
-  typescript: `/**
- * Write your solution here
- * @param {...any} args - The input arguments
- * @returns {any} - The result to be validated against the test cases
- */
-function solution(...args) {
-  // Your code here
-  // Example: if input is [1, 2, 3], args will be [1, 2, 3]
-  
-  return null; // Replace with your solution
-}`,
-  javascript: `/**
- * Write your solution here
- * @param {...any} args - The input arguments
- * @returns {any} - The result to be validated against the test cases
- */
-function solution(...args) {
-  // Your code here
-  // Example: if input is [1, 2, 3], args will be [1, 2, 3]
-  
-  return null; // Replace with your solution
-}`,
-};
+interface ChallengeResponse {
+  data: Challenge;
+}
 
 export function DSAChallenge() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [language, setLanguage] = useState<'typescript' | 'javascript'>('typescript');
-  const [code, setCode] = useState(LANGUAGE_TEMPLATES[language]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState<TestResult[]>([]);
-  const [challenge, setChallenge] = useState<DSAChallengeType | null>(null);
+  const { id } = useParams<{ id: string }>();
+  const { isAuthenticated } = useAuthStore();
+  const [code, setCode] = useState('');
+  const [language, setLanguage] = useState('javascript');
+  const [results, setResults] = useState<TestResult | null>(null);
+
+  const { data: challenge, isLoading } = useQuery<Challenge, Error>({
+    queryKey: ['dsa-challenge', id],
+    queryFn: async () => {
+      const res = await api.dsa.getChallenge(id!) as ChallengeResponse;
+      return res.data;
+    },
+    enabled: !!id
+  });
 
   useEffect(() => {
-    const loadChallenge = async () => {
-      try {
-        const response = await api.dsa.getChallenges();
-        const foundChallenge = response.data.challenges.find(c => c._id === id);
-        if (!foundChallenge) {
-          navigate('/dsa');
-          return;
-        }
-        setChallenge(foundChallenge);
-      } catch (error) {
-        console.error('Failed to load challenge:', error);
-        navigate('/dsa');
-      }
-    };
-    loadChallenge();
-  }, [id, navigate]);
-
-  const validateSolution = (userCode: string, testCase: TestCase): TestResult => {
-    try {
-      // Create a safe function from user code
-      const userFunction = new Function(
-        'input',
-        `
-        ${userCode}
-        try {
-          // If input is an array, pass it directly
-          const args = Array.isArray(input) ? [input] : Object.values(input);
-          const result = solution(...args);
-          
-          // Validate result type matches expected output type
-          if (Array.isArray(${JSON.stringify(testCase.output)}) !== Array.isArray(result)) {
-            throw new Error('Return type mismatch');
-          }
-          return result;
-        } catch (e) {
-          throw new Error('Runtime error: ' + e.message);
-        }
-        `
-      );
-
-      // Run the test case
-      const received = userFunction(testCase.input);
-      const expected = testCase.output;
-
-      // Deep equality check
-      const isEqual = JSON.stringify(received) === JSON.stringify(expected);
-      if (!isEqual) {
-        throw new Error(`Expected ${JSON.stringify(expected)}, but got ${JSON.stringify(received)}`);
-      }
-
-      return {
-        passed: true,
-        input: testCase.input,
-        expected,
-        received,
-      };
-    } catch (error) {
-      return {
-        passed: false,
-        input: testCase.input,
-        expected: testCase.output,
-        received: null,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
+    if (challenge) {
+      setCode(challenge.starterCode[language as keyof typeof challenge.starterCode]);
     }
-  };
-
-  const handleSubmit = async () => {
-    setIsLoading(true);
-    setResults([]);
-    
-    try {
-      if (!challenge) return;
-      
-      const testResults = challenge.testCases.map((testCase: TestCase) => 
-        validateSolution(code, testCase)
-      );
-      
-      setResults(testResults);
-
-      const allPassed = testResults.every((result: TestResult) => result.passed);
-      if (allPassed) {
-        await useDSAStore.getState().updateChallenge(challenge._id, {
-          submissions: challenge.submissions + 1,
-          successfulSubmissions: challenge.successfulSubmissions + 1,
-        });
-      }
-    } catch (error) {
-      console.error('Error executing code:', error);
-    } finally {
-      setIsLoading(false);
+  }, [challenge, language]);
+  const submitMutation = useMutation<TestResult, Error>({
+    mutationFn: async () => {
+      const result = await api.dsa.submitSolution(id!, code, language);
+      return result as TestResult;
+    },
+    onSuccess: (data) => {
+      setResults(data);
     }
-  };
+  });
 
-  const handleLanguageChange = (newLang: 'typescript' | 'javascript') => {
-    setLanguage(newLang);
-    setCode(LANGUAGE_TEMPLATES[newLang]);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
-  if (!challenge) return null;
+  if (!challenge) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-muted-foreground">Challenge not found.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">{challenge.title}</h1>
-          <p className="text-muted-foreground mt-2">{challenge.description}</p>
-        </div>
-        <span className={`px-3 py-1 rounded-full text-sm ${
-          challenge.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-          challenge.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
-          {challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)}
-        </span>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <Link
+        to="/dsa"
+        className="inline-flex items-center text-muted-foreground hover:text-foreground mb-8"
+      >
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Back to Challenges
+      </Link>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Your Solution</h2>
-            <select
-              value={language}
-              onChange={(e) => handleLanguageChange(e.target.value as 'typescript' | 'javascript')}
-              className="px-2 py-1 border border-border rounded-md bg-background"
-            >
-              <option value="typescript">TypeScript</option>
-              <option value="javascript">JavaScript</option>
-            </select>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+          <div className="bg-card rounded-lg p-6 border border-border">
+            <h1 className="text-3xl font-bold mb-4">{challenge.title}</h1>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+              <span>By {challenge.authorId.name}</span>
+              <span>•</span>
+              <span>{challenge.successRate.toFixed(1)}% success rate</span>
+            </div>
+            <div className="prose dark:prose-invert max-w-none">
+              {challenge.description}
+            </div>
           </div>
-          
-          <div className="h-[600px] border border-border rounded-md overflow-hidden">
-            <Editor
-              defaultLanguage={language}
-              defaultValue={LANGUAGE_TEMPLATES[language]}
-              theme="vs-dark"
-              value={code}
-              onChange={(value) => setCode(value || '')}
-              options={{
-                minimap: { enabled: false },
-                fontSize: 14,
-                lineNumbers: 'on',
-                automaticLayout: true,
-                tabSize: 2,
-                formatOnPaste: true,
-                formatOnType: true,
-              }}
-            />
-          </div>
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            <Play className="w-4 h-4" />
-            {isLoading ? 'Running...' : 'Submit Solution'}
-          </button>
 
-          {results.length > 0 && (
+          <div className="bg-card rounded-lg p-6 border border-border">
+            <h2 className="text-xl font-semibold mb-4">Test Cases</h2>
             <div className="space-y-4">
-              <h3 className="font-medium">Test Results:</h3>
-              {results.map((result, index) => (
-                <div
-                  key={index}
-                  className={`p-4 rounded-md ${
-                    result.passed
-                      ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400'
-                      : 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    {result.passed ? (
-                      <CheckCircle className="w-5 h-5" />
-                    ) : (
-                      <XCircle className="w-5 h-5" />
-                    )}
-                    <span className="font-medium">
-                      Test Case {index + 1}: {result.passed ? 'Passed' : 'Failed'}
-                    </span>
-                  </div>
-                  {!result.passed && (
-                    <div className="space-y-2 text-sm">
-                      {result.error ? (
-                        <div className="font-mono bg-background/50 p-2 rounded">
-                          Error: {result.error}
-                        </div>
-                      ) : (
-                        <>
-                          <div>Expected: {JSON.stringify(result.expected)}</div>
-                          <div>Received: {JSON.stringify(result.received)}</div>
-                        </>
-                      )}
+              {challenge.testCases.map((testCase, index) => (
+                <div key={index} className="p-4 bg-card/50 rounded-lg border border-border">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="font-medium mb-2">Input</h3>
+                      <pre className="bg-background p-2 rounded">
+                        {JSON.stringify(testCase.input, null, 2)}
+                      </pre>
                     </div>
+                    <div>
+                      <h3 className="font-medium mb-2">Expected Output</h3>
+                      <pre className="bg-background p-2 rounded">
+                        {JSON.stringify(testCase.output, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                  {testCase.explanation && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {testCase.explanation}
+                    </p>
                   )}
                 </div>
               ))}
             </div>
-          )}
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Test Cases</h2>
-          <div className="space-y-4">
-            {challenge.testCases.map((testCase, index) => (
-              <TestCaseDisplay
-                key={index}
-                input={testCase.input}
-                output={testCase.output}
-                explanation={testCase.explanation}
-              />
-            ))}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <select
+              value={language}
+              onChange={(e) => {
+                setLanguage(e.target.value);
+                setCode(challenge.starterCode[e.target.value as keyof typeof challenge.starterCode]);
+              }}
+              className="px-4 py-2 border border-border rounded-md bg-background"
+            >
+              <option value="javascript">JavaScript</option>
+              <option value="typescript">TypeScript</option>
+              <option value="python">Python</option>
+            </select>
+
+            <Button
+              onClick={() => submitMutation.mutate()}
+              disabled={!isAuthenticated || submitMutation.isPending}
+            >
+              <Play className="w-4 h-4 mr-2" />
+              {submitMutation.isPending ? 'Running...' : 'Run Code'}
+            </Button>
           </div>
+
+          <div className="h-[600px] border border-border rounded-lg overflow-hidden">
+            <Editor
+              height="100%"
+              language={language}
+              value={code}
+              onChange={(value) => setCode(value || '')}
+              theme="vs-dark"
+              options={{
+                minimap: { enabled: false },
+                fontSize: 14,
+                lineNumbers: 'on',
+                scrollBeyondLastLine: false,
+                automaticLayout: true
+              }}
+            />
+          </div>
+
+          {results && (
+            <div className="bg-card rounded-lg p-6 border border-border">
+              <div className="flex items-center gap-2 mb-4">
+                {results.passed ? (
+                  <Check className="w-5 h-5 text-green-500" />
+                ) : (
+                  <X className="w-5 h-5 text-red-500" />
+                )}
+                <h2 className="text-xl font-semibold">
+                  {results.passed ? 'All Tests Passed!' : 'Test Failed'}
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <span className="text-sm text-muted-foreground">Execution Time</span>
+                  <p className="font-medium">{results.executionTime.toFixed(2)}ms</p>
+                </div>
+                <div>
+                  <span className="text-sm text-muted-foreground">Memory Used</span>
+                  <p className="font-medium">{results.memory.toFixed(2)}MB</p>
+                </div>
+              </div>
+
+              {!results.passed && (
+                <div className="space-y-2">
+                  {results.error ? (
+                    <div className="p-4 bg-red-500/10 text-red-500 rounded">
+                      {results.error}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Failed on Test Case {results.failedTestCase! + 1}:
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Expected</h3>
+                          <pre className="bg-background p-2 rounded text-sm">
+                            {JSON.stringify(challenge.testCases[results.failedTestCase!].output, null, 2)}
+                          </pre>
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-medium mb-1">Your Output</h3>
+                          <pre className="bg-background p-2 rounded text-sm">
+                            {JSON.stringify(results.output, null, 2)}
+                          </pre>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
