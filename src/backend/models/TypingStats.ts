@@ -1,6 +1,6 @@
 import { Document, Schema, model } from 'mongoose';
 
-export interface ITypingStats extends Omit<Document, 'errors'> {
+export interface ITypingStats extends Document {
   userId: Schema.Types.ObjectId;
   wpm: number;
   accuracy: number;

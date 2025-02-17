@@ -1,63 +1,88 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Save, Trash2 } from 'lucide-react';
 import { useDSAStore } from '../store/dsa-store';
-import { useAuthStore } from '../store/auth-store';
+import { useAuthStore } from '@/store/auth-store';
 import { TestCase } from '../types';
 import { api } from '@/services/api';
+import { Button } from '@/components/ui/button';
 
 export function CreateDSAChallenge() {
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user } = useAuthStore((state) => ({ user: state.user }));
   const { addChallenge } = useDSAStore();
-
+  const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
   const [tags, setTags] = useState('');
   const [testCases, setTestCases] = useState<TestCase[]>([]);
-  const [newTestCase, setNewTestCase] = useState({ input: '', output: '', isHidden: false });
+  const [newTestCase, setNewTestCase] = useState({ input: '', output: '', explanation: '', isHidden: false });
 
+  useEffect(() => {
+    if (!user) {
+      navigate('/login');
+    } else if (user.role !== 'admin') {
+      navigate('/dsa');
+    }
+    setIsLoading(false);
+  }, [user, navigate]);
 
-  if (!user || user.role !== 'admin') {
-    navigate('/dsa');
+  if (isLoading || !user || user.role !== 'admin') {
     return null;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const challenge = {
-      _id: Date.now().toString(),
-      title,
-      description,
-      difficulty,
-      tags: tags.split(',').map((tag) => tag.trim()),
-      testCases,
-      timeLimit: 2000,
-      memoryLimit: 128, 
-      submissions: 0,
-      successfulSubmissions: 0,
-      successRate: 0,
-      authorId: user.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    try {
+      const challenge = {
+        _id: Date.now().toString(),
+        title,
+        description,
+        difficulty,
+        tags: tags.split(',').map((tag) => tag.trim()),
+        testCases,
+        timeLimit: 2000,
+        memoryLimit: 128,
+        submissions: 0,
+        successfulSubmissions: 0,
+        successRate: 0,
+        authorId: user.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-    addChallenge(challenge);
-    await api.dsa.createChallenge(challenge);
-    navigate('/dsa');
+      addChallenge(challenge);
+      
+      const formattedChallenge = {
+        ...challenge,
+        category: 'default',
+        starterCode: {
+          javascript: '// Write your JavaScript solution here',
+          typescript: '// Write your TypeScript solution here',
+          python: '# Write your Python solution here',
+        },
+      };
+
+      await api.dsa.createChallenge(formattedChallenge);
+      navigate('/dsa');
+    } catch (error) {
+      console.error('Error creating challenge:', error);
+      alert('Failed to create challenge. Please try again.');
+    }
   };
 
   const addTestCase = () => {
     try {
       const input = JSON.parse(newTestCase.input);
       const output = JSON.parse(newTestCase.output);
-      setTestCases([...testCases, { ...newTestCase, input, output }]);
-      setNewTestCase({ input: '', output: '', isHidden: false });
+      const explanation = newTestCase.explanation;
+      setTestCases([...testCases, { ...newTestCase, input, output, explanation }]);
+      setNewTestCase({ input: '', output: '', explanation: '', isHidden: false });
     } catch (error) {
-      alert('Invalid JSON format in test case');
+      alert('Invalid JSON format in test case input/output');
     }
   };
 
@@ -147,6 +172,9 @@ export function CreateDSAChallenge() {
                 <pre className="text-sm bg-secondary p-2 rounded-md">
                   Output: {JSON.stringify(testCase.output, null, 2)}
                 </pre>
+                <pre className="text-sm bg-secondary p-2 rounded-md">
+                  Output: {JSON.stringify(testCase.explanation, null, 2)}
+                </pre>
               </div>
             ))}
           </div>
@@ -173,6 +201,17 @@ export function CreateDSAChallenge() {
                 className="w-full px-4 py-2 border border-border rounded-md bg-background"
               />
             </div>
+            <div className="space-y-2">
+              <label className="block text-sm">Explanation (text)</label>
+              <textarea
+                title='explanation'
+                value={newTestCase.explanation}
+                onChange={(e) => setNewTestCase({ ...newTestCase, explanation: e.target.value })}
+                className="w-full px-4 py-2 border border-border rounded-md bg-background"
+                rows={3}
+                placeholder="Explain the test case..."
+              />
+            </div>
             <div className="flex items-center">
               <input
                 title='isHidden'
@@ -194,12 +233,10 @@ export function CreateDSAChallenge() {
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
+        <Button type="submit" className="w-full">
+          <Save className="w-4 h-4 mr-2" />
           Create Challenge
-        </button>
+        </Button>
       </form>
     </div>
   );

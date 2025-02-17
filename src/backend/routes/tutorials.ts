@@ -4,19 +4,19 @@ import { protect } from '../middleware/auth';
 
 const router = Router();
 
-router
-  .route('/')
-  .get(TutorialController.getTutorials)
+// Get user progress
+router.get('/progress', protect, TutorialController.getUserProgress);
 
+// Create tutorial
+router.post('/create', protect, TutorialController.createTutorial);
 
-router
-  .route('/:id')
+// Get all tutorials
+router.get('/', TutorialController.getTutorials);
+
+// Get, update, delete specific tutorial
+router.route('/:id')
   .get(TutorialController.getTutorial)
   .patch(protect, TutorialController.updateTutorial)
   .delete(protect, TutorialController.deleteTutorial);
-
-router
-  .route('/create')
-  .post(protect, TutorialController.createTutorial);
 
 export default router; 

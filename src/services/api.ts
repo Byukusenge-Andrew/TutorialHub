@@ -26,6 +26,24 @@ interface TypingHistoryData {
   };
 }
 
+interface TypingHistoryResponse {
+  status: string;
+  data: {
+    history: Array<{
+      wpm: number;
+      accuracy: number;
+      date: string;
+      duration: number;
+    }>;
+    stats: {
+      avgWpm: number;
+      avgAccuracy: number;
+      bestWpm: number;
+      totalTests: number;
+    };
+  };
+}
+
 const handleResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
   if (!response.ok) {
@@ -81,10 +99,30 @@ export const api = {
 
   tutorials: {
     getAll: async () => {
-      const response = await axios.get('/api/tutorials');
-      return response.data;
+      const response = await fetch(`${API_URL}/tutorials`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse<{
+        status: string;
+        data: {
+          tutorials: Tutorial[];
+        };
+      }>(response);
     },
-     
+
+    getTutorial: async (id: string) => {
+      if (!id) throw new Error('Tutorial ID is required');
+      const response = await fetch(`${API_URL}/tutorials/${id}`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse<{
+        status: string;
+        data: {
+          tutorial: Tutorial;
+        };
+      }>(response);
+    },
+
     create: async (tutorialData: {
       title: string;
       description: string;
@@ -149,10 +187,39 @@ export const api = {
       });
       return handleResponse<string[]>(response);
     },
+
+    getUserProgress: async () => {
+      const response = await fetch(`${API_URL}/tutorials/progress`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse<{
+        completed: number;
+        inProgress: number;
+        totalTime: number;
+      }>(response);
+    },
   },
 
   typing: {
-    saveResult: async (data: {
+    saveRecord: async (data: {
+      wpm: number,
+      accuracy: number, 
+      duration: number,
+      characters: number,
+      errors: number
+    }) => {
+      const response = await fetch(`${API_URL}/typing/saveRecord`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      return handleResponse<{status: string, data: any}>(response);
+    },
+
+    savestatResult: async (data: {
       wpm: number,
       accuracy: number, 
       duration: number,
@@ -169,20 +236,33 @@ export const api = {
       });
       return handleResponse<{status: string, data: any}>(response);
     },
-
-    getHistory: async (): Promise<TypingHistoryData> => {
+    
+    getHistory: async () => {
       try {
         const response = await fetch(`${API_URL}/typing/history`, {
           headers: getAuthHeader()
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch typing history');
         }
 
         const result = await handleResponse<{
           status: string;
-          data: TypingHistoryData;
+          data: {
+            history: Array<{
+              wpm: number;
+              accuracy: number;
+              score: number;
+              date: string;
+              duration: number;
+            }>;
+            stats: {
+              bestScore: number;
+              totalTests: number;
+              avgAccuracy: number;
+            };
+          };
         }>(response);
 
         return result.data;
@@ -262,34 +342,33 @@ export const api = {
       return handleResponse(response);
     },
 
-    createChallenge: async (data: {
-      title: string;
-      description: string;
-      difficulty: string;
-      category: string;
-      tags: string[];
-      starterCode: {
-        javascript: string;
-        typescript: string;
-        python: string;
-      };
-      testCases: {
-        input: any;
-        output: any;
-        explanation?: string;
-        isHidden?: boolean;
-      }[];
-    }) => {
-      const response = await fetch(`${API_URL}/dsa/challenges`, {
+    createChallenge: async (challenge: any) => {
+      const response = await fetch('/api/dsa/challengescreate', {
         method: 'POST',
         headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(challenge),
       });
-      return handleResponse(response);
-    }
+      
+      if (!response.ok) {
+        throw new Error('Failed to create challenge');
+      }
+      
+      return response.json();
+    },
+
+    getUserStats: async () => {
+      const response = await fetch(`${API_URL}/dsa/user-stats`, {
+        headers: getAuthHeader()
+      });
+      return handleResponse<{
+        solved: number;
+        totalAttempted: number;
+        successRate: number;
+      }>(response);
+    },
   },
 
   admin: {
@@ -340,10 +419,20 @@ export const api = {
 
   community: {
     getPosts: async () => {
-      const response = await fetch(`${API_URL}/community/posts`, {
-        headers: getAuthHeader(),
-      });
-      return handleResponse<{ status: string; data: Post[] }>(response);
+      try {
+        const response = await fetch(`${API_URL}/community/posts`, {
+          headers: getAuthHeader(),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch posts');
+        }
+
+        return handleResponse<{ status: string; data: Post[] }>(response);
+      } catch (error) {
+        console.error('Error fetching posts:', error);
+        throw error;
+      }
     },
 
     getPost: async (id: string) => {
@@ -354,15 +443,28 @@ export const api = {
     },
 
     createPost: async (data: { title: string; content: string; tags: string[] }) => {
-      const response = await fetch(`${API_URL}/community/posts`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-      return handleResponse<{ status: string; data: Post }>(response);
+      try {
+        const response = await fetch(`${API_URL}/community/posts`, {
+          method: 'POST',
+          headers: {
+            ...getAuthHeader(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create post');
+        }
+
+        return handleResponse<{
+          status: string;
+          data: Post;
+        }>(response);
+      } catch (error) {
+        console.error('Error creating post:', error);
+        throw error;
+      }
     },
 
     addComment: async (postId: string, content: string) => {
@@ -394,11 +496,12 @@ export const api = {
       return handleResponse(response);
     },
 
-    getStudentStats: async () => {
+    getStudentStats: async (): Promise<any> => {
       const response = await fetch(`${API_URL}/dashboard/student-stats`, {
         headers: getAuthHeader()
       });
-      return handleResponse(response);
+      const data = await handleResponse<{ status: string; data: any }>(response);
+      return data.data;
     }
   },
 };

@@ -2,21 +2,37 @@ import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/auth';
 import TutorialService from '../services/TutorialService';
 import { catchAsync } from '../utils/catchAsync';
+import Progress from '../models/Progress';
 
 export class TutorialController {
 
   createTutorial = catchAsync(async (req: AuthRequest, res: Response) => {
-    const tutorial = await TutorialService.createTutorial(req.body, req.user.id);
-   try{ 
-    res.status(201).json({
-      status: 'success',
-      data: { tutorial }
-    });
-   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-   }
-    
+    try {
+      // Clean up sections data before saving
+      const tutorialData = {
+        ...req.body,
+        sections: req.body.sections.map((section: any, index: number) => ({
+          title: section.title,
+          content: section.content,
+          order: section.order || index
+        })),
+        authorId: req.user.id
+      };
+
+      const tutorial = await TutorialService.createTutorial(tutorialData, req.user.id);
+
+      res.status(201).json({
+        status: 'success',
+        data: { tutorial }
+      });
+    } catch (error) {
+      console.error('Error creating tutorial:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to create tutorial',
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
   });
 
   getTutorials = catchAsync(async (req: Request, res: Response) => {
@@ -86,9 +102,26 @@ export class TutorialController {
     }
   }
 
-  
+  getUserProgress = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user._id;
 
-  
+    // Get all progress records for the user
+    const progress = await Progress.find({ userId });
+
+    // Calculate stats
+    const completed = progress.filter(p => p.progress === 100).length;
+    const inProgress = progress.filter(p => p.progress > 0 && p.progress < 100).length;
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        completed,
+        inProgress,
+        totalTime: 0 // You can add time tracking if needed
+      }
+    });
+  });
+
 }
 
 export default new TutorialController(); 

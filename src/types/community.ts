@@ -16,10 +16,11 @@ export interface Post {
     _id: string;
     name: string;
   };
+  tags: string[];
   likes: number;
   comments: Comment[];
-  tags: string[];
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface PostResponse {

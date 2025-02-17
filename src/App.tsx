@@ -26,6 +26,8 @@ import { Community } from './pages/Community';
 import { CreatePost } from './pages/CreatePost';
 import { PostDetail } from './pages/PostDetail';
 import { CommunityPage } from '@/pages/CommunityPage';
+import { CreatePostPage } from '@/pages/CreatePostPage';
+import { PostDetailPage } from '@/pages/PostDetailPage';
 
 function App() {
   return (
@@ -77,7 +79,11 @@ function App() {
               <Profile />
             </ProtectedRoute>
           } />
-          <Route path="dsa/create" element={<CreateDSAChallenge />} />
+          <Route path="dsa/create" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CreateDSAChallenge />
+            </ProtectedRoute>
+          } />
           <Route path="tutorials/create" element={<CreateTutorial />} />
           <Route path="/community" element={
             <ProtectedRoute>
@@ -86,10 +92,14 @@ function App() {
           } />
           <Route path="/community/post/create" element={
             <ProtectedRoute>
-              <CreatePost />
+              <CreatePostPage />
             </ProtectedRoute>
           } />
-          <Route path="/community/post/:id" element={<PostDetail />} />
+          <Route path="/community/post/:id" element={
+            <ProtectedRoute>
+              <PostDetailPage />
+            </ProtectedRoute>
+          } />
         </Route>
       </Routes>
     </AuthProvider>

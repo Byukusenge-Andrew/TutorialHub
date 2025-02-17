@@ -2,8 +2,9 @@ export interface TypingStats {
   wpm: number;
   accuracy: number;
   duration: number;
-  score: number;
-  date?: Date;
+  characters: number;
+  errors: number;
+  score?: number;
 }
 
 export interface TypingHistoryStats {
@@ -16,7 +17,17 @@ export interface TypingHistoryStats {
 export interface TypingHistoryResponse {
   status: string;
   data: {
-    records: TypingStats[];
-    stats: TypingHistoryStats;
+    history: Array<{
+      wpm: number;
+      accuracy: number;
+      score: number;
+      date: string;
+      duration: number;
+    }>;
+    stats: {
+      bestScore: number;
+      totalTests: number;
+      avgAccuracy: number;
+    };
   };
 } 

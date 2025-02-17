@@ -41,36 +41,30 @@ export function TypingPage() {
   const [activeTab, setActiveTab] = useState('history');
   const queryClient = useQueryClient();
 
-  const { data: stats } = useQuery<TypingHistory>({
-    queryKey: ['typing-stats'],
-    queryFn: async () => {
-      const historyResponse = await api.typing.getHistory();
-      const avgWpm = historyResponse.history.reduce((acc, curr) => acc + curr.wpm, 0) / historyResponse.history.length;
-      const avgAccuracy = historyResponse.history.reduce((acc, curr) => acc + curr.accuracy, 0) / historyResponse.history.length;
-
-      return {
-        recentTests: historyResponse.history,
-        averages: {
-          avgWpm,
-          avgAccuracy,
-          totalTests: historyResponse.history.length
-        }
-      };
+  const saveRecordMutation = useMutation({
+    mutationFn: (stats: TypingStats) => api.typing.saveRecord(stats),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['typing-history'] });
     }
   });
 
-  const saveMutation = useMutation({
-    mutationFn: (stats: TypingStats) => api.typing.saveResult({
-      wpm: stats.wpm,
-      accuracy: stats.accuracy,
-      duration: stats.duration,
-      characters: Math.round(stats.characters / 5),
-      errors: stats.errors
-    }),
+  const saveStatMutation = useMutation({
+    mutationFn: (stats: TypingStats) => api.typing.savestatResult(stats),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['typing-stats'] });
     }
   });
+
+  const { data: history } = useQuery({
+    queryKey: ['typing-history'],
+    queryFn: () => api.typing.getHistory(),
+    staleTime: 30000,
+  });
+  useEffect(() => {
+    if (history) {
+      console.log('Typing History Data:', history); // Log the history data
+    }
+  }, [history]); 
 
   const calculateStats = useCallback(() => {
     if (!startTime) return null;
@@ -93,6 +87,13 @@ export function TypingPage() {
       errors: characters - correctChars
     };
   }, [text, input, startTime]);
+
+  const handleTestComplete = (stats: TypingStats) => {
+    setCurrentStats(stats);
+    setIsFinished(true);
+    saveRecordMutation.mutate(stats);
+    saveStatMutation.mutate(stats);
+  };
 
   const resetTest = () => {
     setInput('');
@@ -118,7 +119,6 @@ export function TypingPage() {
     const newInput = e.target.value;
     setInput(newInput);
 
-    // Check current character
     if (newInput.length > 0) {
       const currentChar = newInput[newInput.length - 1];
       const expectedChar = text[newInput.length - 1];
@@ -130,20 +130,21 @@ export function TypingPage() {
 
     setCurrentCharIndex(newInput.length);
 
-    // When user finishes typing
+ 
     if (newInput.length === text.length) {
       const stats = calculateStats();
       if (stats) {
-        setCurrentStats(stats);
-        // Immediately save the result
-        saveMutation.mutate(stats);
-        setIsFinished(true);
+        handleTestComplete(stats);
       }
     }
   };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
+  };
+
+  const handleProgress = (stats: TypingStats) => {
+    setCurrentStats(stats);
   };
 
   useEffect(() => {
@@ -167,96 +168,60 @@ export function TypingPage() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="md:col-span-2 space-y-6">
-          <div className="bg-card rounded-lg border border-border p-6">
-            <TypingPrompt 
-              text={text}
-              input={input}
-              currentCharIndex={currentCharIndex}
-              incorrectChars={incorrectChars}
-              onInput={handleInputChange}
-              isFinished={isFinished}
-              onReset={resetTest}
-            />
-           
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div>
+          <TypingPrompt 
+            text={text}
+            input={input}
+            currentCharIndex={currentCharIndex}
+            incorrectChars={incorrectChars}
+            onInput={handleInputChange}
+            isFinished={isFinished}
+            onComplete={handleTestComplete}
+            onProgress={handleProgress}
+            onReset={resetTest} 
+          />
 
-            {currentStats && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-card p-4 rounded-lg text-center">
-                  <h3 className="text-lg font-semibold">WPM</h3>
-                  <p className="text-3xl font-bold text-primary">{currentStats.wpm}</p>
-                </div>
-                <div className="bg-card p-4 rounded-lg text-center">
-                  <h3 className="text-lg font-semibold">Accuracy</h3>
-                  <p className="text-3xl font-bold text-primary">{currentStats.accuracy}%</p>
-                </div>
-                <div className="bg-card p-4 rounded-lg text-center">
-                  <h3 className="text-lg font-semibold">Time</h3>
-                  <p className="text-3xl font-bold text-primary">
-                    {Math.round(currentStats.duration)}s
-                  </p>
-                </div>
+          {currentStats && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="bg-card p-4 rounded-lg text-center">
+                <h3 className="text-lg font-semibold">WPM</h3>
+                <p className="text-3xl font-bold text-primary">
+                  {currentStats.wpm}
+                </p>
               </div>
-            )}
-
-            {stats && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-bold">Your Progress</h2>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={stats.recentTests}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="wpm" stroke="#3b82f6" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-card p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-semibold">Average WPM</h3>
-                    <p className="text-3xl font-bold text-primary">
-                      {Math.round(stats.averages.avgWpm)}
-                    </p>
-                  </div>
-                  <div className="bg-card p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-semibold">Average Accuracy</h3>
-                    <p className="text-3xl font-bold text-primary">
-                      {Math.round(stats.averages.avgAccuracy)}%
-                    </p>
-                  </div>
-                  <div className="bg-card p-4 rounded-lg text-center">
-                    <h3 className="text-lg font-semibold">Total Tests</h3>
-                    <p className="text-3xl font-bold text-primary">
-                      {stats.averages.totalTests}
-                    </p>
-                  </div>
-                </div>
+              <div className="bg-card p-4 rounded-lg text-center">
+                <h3 className="text-lg font-semibold">Accuracy</h3>
+                <p className="text-3xl font-bold text-primary">
+                  {currentStats.accuracy}%
+                </p>
               </div>
-            )}
-
-            <div className="flex justify-center gap-4 my-2">
-              <Button onClick={resetTest} size="lg" 
-                variant={isFinished ? 'outline' : 'default'}
-                className={isFinished ? 'bg-red-500' : ''}
-              >
-                {isFinished ? 'Try Again' : 'Reset'}
-              </Button>
-              <Button 
-                onClick={handleNewPrompt} 
-                size="lg"
-              >
-                New Text
-              </Button>
+              <div className="bg-card p-4 rounded-lg text-center">
+                <h3 className="text-lg font-semibold">Score</h3>
+                <p className="text-3xl font-bold text-primary">
+                  {Math.round(currentStats.wpm * (currentStats.accuracy / 100))}
+                </p>
+              </div>
             </div>
+          )}
+
+          <div className="flex justify-center gap-4 my-4">
+            <Button 
+              onClick={resetTest} 
+              size="lg"
+              variant={isFinished ? 'outline' : 'default'}
+              className={isFinished ? 'bg-red-500' : ''}
+            >
+              {isFinished ? 'Try Again' : 'Reset'}
+            </Button>
+            <Button onClick={handleNewPrompt} size="lg">
+              New Text
+            </Button>
           </div>
         </div>
-        
-        <div className='flex flex-col gap-4'>
-          {activeTab === 'history' && <TypingHistory />}
+
+        <div className="flex flex-col gap-4">
+          {activeTab === 'history' && <TypingHistory data={history} />}
           {activeTab === 'leaderboard' && <TypingLeaderboard />}
         </div>
       </div>

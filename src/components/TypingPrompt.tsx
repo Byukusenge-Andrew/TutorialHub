@@ -12,6 +12,8 @@ interface TypingPromptProps {
   onInput: (e: React.ChangeEvent<HTMLInputElement>) => void;
   isFinished: boolean;
   onReset: () => void;
+  onComplete: (stats: TypingStats) => void;
+  onProgress: (stats: TypingStats) => void;
 }
 
 export function TypingPrompt({ 
@@ -21,11 +23,14 @@ export function TypingPrompt({
   incorrectChars,
   onInput,
   isFinished,
-  onReset 
+  onReset,
+  onComplete,
+  onProgress
 }: TypingPromptProps) {
   const [timer, setTimer] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
   const queryClient = useQueryClient();
+  const [startTime, setStartTime] = useState<number>(Date.now());
   
   const saveMutation = useMutation({
     mutationFn: (stats: TypingStats) => api.typing.saveResult(stats),
@@ -62,11 +67,19 @@ export function TypingPrompt({
     }
   }, [input]);
 
-  const calculateScore = () => {
+  const calculateStats = (): TypingStats => {
     const wpm = Math.round((input.length / 5) / (timer / 60));
     const accuracy = Math.round((text.length - incorrectChars.size) / text.length * 100);
-    const score = Math.round((wpm * accuracy) / 100); // Weight both speed and accuracy
-    return { wpm, accuracy, score };
+    const score = Math.round((wpm * accuracy) / 100);
+    
+    return {
+      wpm,
+      accuracy,
+      score,
+      duration: (Date.now() - startTime) / 1000,
+      characters: text.length,
+      errors: incorrectChars.size
+    };
   };
 
   const formatTime = (seconds: number) => {
@@ -79,15 +92,23 @@ export function TypingPrompt({
     saveMutation.mutate(stats);
   };
 
+  useEffect(() => {
+    if (currentCharIndex === text.length && !isFinished) {
+      onComplete(calculateStats());
+    } else if (currentCharIndex > 0) {
+      onProgress(calculateStats());
+    }
+  }, [currentCharIndex, text.length, isFinished]);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
         <span className="text-2xl font-mono">{formatTime(timer)}</span>
         {isFinished && (
           <div className="space-y-2">
-            <div className="text-lg">Speed: {calculateScore().wpm} WPM</div>
-            <div className="text-lg">Accuracy: {calculateScore().accuracy}%</div>
-            <div className="text-lg font-bold">Score: {calculateScore().score}</div>
+            <div className="text-lg">Speed: {calculateStats().wpm} WPM</div>
+            <div className="text-lg">Accuracy: {calculateStats().accuracy}%</div>
+            <div className="text-lg font-bold">Score: {calculateStats().score}</div>
           </div>
         )}
       </div>

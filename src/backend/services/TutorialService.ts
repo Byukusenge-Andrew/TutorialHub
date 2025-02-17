@@ -1,6 +1,7 @@
 import { ITutorial } from '../models/Tutorial';
 import Tutorial from '../models/Tutorial';
 import { AppError } from '../utils/errors';
+import mongoose from 'mongoose';
 
 export class TutorialService {
   async createTutorial(tutorialData: Partial<ITutorial>, authorId: string): Promise<ITutorial> {
@@ -18,20 +19,26 @@ export class TutorialService {
     return tutorials;
   }
 
-  async getTutorialById(id: string): Promise<ITutorial | string[]> {
+  async getTutorialById(id: string): Promise<ITutorial> {
     try {
-      if (id === 'categories') {
-        return this.getCategories();
+      // Validate if id is a valid MongoDB ObjectId
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        throw new AppError('Invalid tutorial ID format', 400);
       }
-      
-      const tutorial = await Tutorial.findById(id);
+
+      const tutorial = await Tutorial.findById(id)
+        .populate('authorId', 'name')
+        .lean();
+
       if (!tutorial) {
-        throw new Error('Tutorial not found');
+        throw new AppError('Tutorial not found', 404);
       }
+
       return tutorial;
     } catch (error) {
-      console.error('Error getting tutorial:', error);
-      throw error;
+      if (error instanceof AppError) throw error;
+      console.error('Error fetching tutorial:', error);
+      throw new AppError('Failed to fetch tutorial', 500);
     }
   }
 

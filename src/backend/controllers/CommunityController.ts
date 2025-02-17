@@ -36,17 +36,29 @@ class CommunityController {
   });
 
   createPost = catchAsync(async (req: AuthRequest, res: Response) => {
-    const post = await Post.create({
-      ...req.body,
-      authorId: req.user._id
-    });
+    try {
+      if (!req.user?._id) {
+        throw new Error('User not authenticated');
+      }
 
-    const populatedPost = await post.populate('authorId', 'name');
+      const post = await Post.create({
+        ...req.body,
+        authorId: req.user._id
+      });
 
-    res.status(201).json({
-      status: 'success',
-      data: populatedPost
-    });
+      const populatedPost = await post.populate('authorId', 'name');
+
+      res.status(201).json({
+        status: 'success',
+        data: populatedPost
+      });
+    } catch (error) {
+      console.error('Error creating post:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Failed to create post'
+      });
+    }
   });
 
   addComment = catchAsync(async (req: AuthRequest, res: Response) => {
