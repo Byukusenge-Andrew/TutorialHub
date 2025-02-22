@@ -118,15 +118,48 @@ class TypingStatsController {
 
   getLeaderboard = catchAsync(async (req: Request, res: Response) => {
     const leaderboard = await TypingStats.aggregate([
+      // Group by user and get their stats
       {
         $group: {
           _id: '$userId',
+          score: {
+            $max: {
+              $multiply: [
+                '$wpm',
+                { $divide: ['$accuracy', 100] }
+              ]
+            }
+          },
           bestWpm: { $max: '$wpm' },
           avgWpm: { $avg: '$wpm' },
           avgAccuracy: { $avg: '$accuracy' },
-          totalTests: { $sum: 1 }
+          totalTests: { $sum: 1 },
+          recentScore: { 
+            $max: {
+              $cond: [
+                { $gt: ['$date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)] },
+                {
+                  $multiply: [
+                    '$wpm',
+                    { $divide: ['$accuracy', 100] }
+                  ]
+                },
+                0
+              ]
+            }
+          }
         }
       },
+      // Sort primarily by score, then by other metrics
+      { 
+        $sort: { 
+          score: -1,
+          bestWpm: -1,
+          avgAccuracy: -1
+        } 
+      },
+      { $limit: 10 },
+      // Lookup user details
       {
         $lookup: {
           from: 'users',
@@ -135,21 +168,25 @@ class TypingStatsController {
           as: 'user'
         }
       },
-      { $unwind: '$user' },
+      // Format the output
       {
         $project: {
-          name: '$user.name',
-          bestWpm: 1,
-          avgWpm: 1,
-          avgAccuracy: 1,
-          totalTests: 1
+          _id: 1,
+          username: { $arrayElemAt: ['$user.name', 0] },
+          score: { $round: ['$score', 0] },
+          bestWpm: { $round: ['$bestWpm', 0] },
+          avgWpm: { $round: ['$avgWpm', 0] },
+          avgAccuracy: { $round: ['$avgAccuracy', 1] },
+          totalTests: 1,
+          recentScore: { $round: ['$recentScore', 0] }
         }
-      },
-      { $sort: { bestWpm: -1 } },
-      { $limit: 10 }
+      }
     ]);
 
-    res.json(leaderboard);
+    res.json({
+      status: 'success',
+      data: leaderboard
+    });
   });
 
   getAdminStats = catchAsync(async (req: Request, res: Response) => {

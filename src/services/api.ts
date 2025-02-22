@@ -280,10 +280,25 @@ export const api = {
     },
 
     getLeaderboard: async () => {
-      const response = await fetch(`${API_URL}/typing/leaderboard`, {
-        headers: getAuthHeader()
-      });
-      return handleResponse(response);
+      try {
+        const response = await fetch(`${API_URL}/typing/leaderboard`, {
+          headers: getAuthHeader()
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch leaderboard');
+        }
+
+        const data = await handleResponse<{
+          status: string;
+          data: any[];
+        }>(response);
+
+        return data.data; // Return the array directly
+      } catch (error) {
+        console.error('Error fetching leaderboard:', error);
+        return []; // Return empty array on error
+      }
     },
 
     getUserHistory: async (): Promise<TypingHistoryData> => {

@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { api } from '@/services/api';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { token, setLoading } = useAuthStore();
+  const { token, setLoading, setUser } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -18,22 +18,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const response = await api.auth.validate();
-        console.log('Token validation response:', response);
-        
-        if (response.user) {
-          useAuthStore.getState().login(response.user, token);
+        const result = await api.auth.validate();
+        if (result?.user) {
+          setUser(result.user);
+          useAuthStore.getState().login(result.user, token);
           
           if (location.pathname === '/login' || location.pathname === '/register') {
-            navigate(response.user.role === 'admin' ? '/admin' : '/dashboard');
+            navigate(result.user.role === 'admin' ? '/admin' : '/dashboard');
+          }
+        } else {
+          setUser(null);
+          useAuthStore.getState().logout();
+          if (location.pathname !== '/login' && location.pathname !== '/register') {
+            navigate('/login');
           }
         }
       } catch (error) {
         console.error('Token validation error:', error);
+        setUser(null);
         useAuthStore.getState().logout();
         if (location.pathname !== '/login' && location.pathname !== '/register') {
           navigate('/login');
         }
+        localStorage.removeItem('token');
       } finally {
         setLoading(false);
       }
