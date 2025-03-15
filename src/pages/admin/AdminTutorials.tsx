@@ -1,9 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/services/api';
+import { Tutorial } from '@/types';
 
 export function AdminTutorials() {
   const [tutorials, setTutorials] = useState([]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['tutorials'],
+    queryFn: () => api.tutorials.getAll(),
+  });
+  
+  useEffect(() => {
+    if (data && data.data && data.data.tutorials) {
+      setTutorials(data.data.tutorials);
+    }
+  }, [data]);
+   
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!data) return <div>No tutorials found</div>;
+  
 
   return (
     <div className="space-y-6">
@@ -21,28 +39,31 @@ export function AdminTutorials() {
       <div className="bg-card rounded-lg shadow-sm border border-border">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-muted">
+            <thead className="bg-muted border border-b">
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium">Title</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Author</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Category</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Created</th>
-                <th className="px-6 py-3 text-left text-sm font-medium">Actions</th>
+                <th className="px-6 py-3 text-left text-xl font-medium">Title</th>
+                <th className="px-6 py-3 text-left text-xl font-medium">Author</th>
+                <th className="px-6 py-3 text-left text-xl font-medium">Category</th>
+                <th className="px-6 py-3 text-left text-xl font-medium">Created</th>
+                <th className="px-6 py-3 text-left text-xl font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {tutorials.map((tutorial: any) => (
-                <tr key={tutorial.id}>
+                <tr key={tutorial._id || tutorial.id}>
                   <td className="px-6 py-4">{tutorial.title}</td>
-                  <td className="px-6 py-4">{tutorial.author.name}</td>
+                  <td className="px-6 py-4">
+                    {tutorial.authorId?.name || 
+                     (typeof tutorial.authorId === 'string' ? tutorial.authorId : 'Unknown')}
+                  </td>
                   <td className="px-6 py-4">{tutorial.category}</td>
                   <td className="px-6 py-4">
-                    {new Date(tutorial.createdAt).toLocaleDateString()}
+                    {tutorial.createdAt ? new Date(tutorial.createdAt).toLocaleDateString() : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
                       <button className="text-blue-500 hover:text-blue-700"
-                      title = "Edit Tutorial"
+                      title="Edit Tutorial"
                       >
                         <Edit className="w-4 h-4" />
                       </button>

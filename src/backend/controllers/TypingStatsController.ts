@@ -118,7 +118,6 @@ class TypingStatsController {
 
   getLeaderboard = catchAsync(async (req: Request, res: Response) => {
     const leaderboard = await TypingStats.aggregate([
-      // Group by user and get their stats
       {
         $group: {
           _id: '$userId',

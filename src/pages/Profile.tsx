@@ -1,126 +1,173 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, LogOut, BookOpen, Star } from 'lucide-react';
-import { useAuthStore } from '../store/auth-store';
-import { api } from '@/services/api';
-
-interface ProgressItem {
-  tutorialId: {
-    _id: string;
-    title: string;
-  };
-  progress: number;
-  completedSections: string[];
-}
+import React, { useState } from 'react';
+import { useAuth } from '@/providers/AuthProvider';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { User, Mail, Key, Shield } from 'lucide-react';
 
 export function Profile() {
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
-  const [progress, setProgress] = useState<ProgressItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
 
-  useEffect(() => {
-    loadProgress();
-  }, []);
-
-  const loadProgress = async () => {
-    if (!user) return;
-    try {
-      const response = await api.progress.getAllProgress();
-      setProgress(response.progress || []);
-      console.log(" the progress in profile is "+progress)
-    } catch (error) {
-      console.error('Error loading progress:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // Add your update logic here
+    setIsEditing(false);
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-        <div className="flex items-center space-x-4 mb-8">
-          <div className="bg-blue-100 p-4 rounded-full">
-            <User className="h-8 w-8 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">{user.name}</h1>
-            <p className="text-gray-600">{user.email}</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="ml-auto flex items-center space-x-2 text-red-600 hover:text-red-800"
-          >
-            <LogOut className="h-5 w-5" />
-            <span>Logout</span>
-          </button>
-        </div>
+    
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+<div >
+{
+  user?.isVerified == false && (
+    <div className='bg-red-500 text-white p-4  mb-8 rounded-xl'>
+      <h1>Please verify your email to continue</h1>
+    </div>
+  )
+}
+</div>
+      <h1 className="text-3xl font-bold mb-8">Profile Settings</h1>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <div className="flex items-center space-x-2 mb-4">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-              <h2 className="text-xl font-semibold">Your Progress</h2>
-            </div>
+      <div className="grid gap-6">
+        {/* Profile Info Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Profile Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
             <div className="space-y-4">
-              {isLoading ? (
-                <div>Loading progress...</div>
-              ) : progress.length > 0 ? (
-                progress.map((item: ProgressItem) => (
-                  <div key={item.tutorialId._id} className="bg-white p-4 rounded-md shadow-sm">
-                    <h3 className="font-medium mb-2">{item.tutorialId.title}</h3>
-                    <div className="progress-bar-container">
-                      <div 
-                        className="progress-bar"
-                        data-progress={item.progress}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Name</p>
+                  <p className="font-medium">{user?.name}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{user?.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Role</p>
+                  <p className="font-medium capitalize">{user?.role}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Account Settings Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Account Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Name
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-md"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    className="w-full p-2 border rounded-md"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    disabled={!isEditing}
+                  />
+                </div>
+              </div>
+
+              {isEditing && (
+                <div className="space-y-4 border-t pt-4 mt-4">
+                  <h3 className="font-medium">Change Password</h3>
+                  <div className="grid gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Current Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full p-2 border rounded-md"
+                        value={formData.currentPassword}
+                        onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
                       />
                     </div>
-                    <p className="text-sm text-gray-600 mt-2">
-                      {item.completedSections.length} sections completed
-                    </p>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        New Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full p-2 border rounded-md"
+                        value={formData.newPassword}
+                        onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">
+                        Confirm New Password
+                      </label>
+                      <input
+                        type="password"
+                        className="w-full p-2 border rounded-md"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      />
+                    </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center text-gray-500">
-                  No progress recorded yet
                 </div>
               )}
-            </div>
-          </div>
 
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <div className="flex items-center space-x-2 mb-4">
-              <Star className="h-6 w-6 text-blue-600" />
-              <h2 className="text-xl font-semibold">Your Achievements</h2>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white p-4 rounded-md shadow-sm text-center">
-                <div className="bg-yellow-100 p-2 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
-                  <Star className="h-6 w-6 text-yellow-600" />
-                </div>
-                <h3 className="font-medium">Quick Learner</h3>
-                <p className="text-sm text-gray-600">Completed 5 tutorials</p>
+              <div className="flex justify-end gap-4">
+                {isEditing ? (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditing(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">
+                      Save Changes
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    Edit Profile
+                  </Button>
+                )}
               </div>
-              <div className="bg-white p-4 rounded-md shadow-sm text-center">
-                <div className="bg-blue-100 p-2 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-2">
-                  <BookOpen className="h-6 w-6 text-blue-600" />
-                </div>
-                <h3 className="font-medium">Knowledge Seeker</h3>
-                <p className="text-sm text-gray-600">Joined 3 courses</p>
-              </div>
-            </div>
-          </div>
-        </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

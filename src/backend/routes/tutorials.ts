@@ -11,7 +11,7 @@ router.get('/progress', protect, TutorialController.getUserProgress);
 router.post('/create', protect, TutorialController.createTutorial);
 
 // Get all tutorials
-router.get('/', TutorialController.getTutorials);
+router.get('/getall', TutorialController.getTutorials);
 
 // Get, update, delete specific tutorial
 router.route('/:id')

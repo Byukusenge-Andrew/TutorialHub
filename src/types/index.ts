@@ -1,4 +1,5 @@
 export interface User {
+  _id: string;
   id: string;
   name: string;
   email: string;
@@ -65,10 +66,9 @@ export interface TypingStats {
 }
 
 export interface TestCase {
-  input: any;
-  output: any;
-  explanation?: string;
-  isHidden?: boolean;
+  input: string;
+  expectedOutput: string;
+  isHidden: boolean;
 }
 
 export interface DSAChallenge {
@@ -92,6 +92,7 @@ export interface ApiResponse<T> {
   status: string;
   data: T;
 }
+
 
 export * from './auth';
 export * from './dsa';

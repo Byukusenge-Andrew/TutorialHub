@@ -1,4 +1,3 @@
-
 import { StatCard } from '@/components/ui/stat-card';
 
 
@@ -36,6 +35,13 @@ export function TypingHistory({ data }: TypingHistoryProps) {
     );
   }
 
+  // Process history data to ensure score exists
+  const processedHistory = data.history.map((item: any) => ({
+    ...item,
+    // Calculate score if it doesn't exist
+    score: item.score || Math.round(item.wpm * (item.accuracy / 100))
+  }));
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
@@ -55,7 +61,7 @@ export function TypingHistory({ data }: TypingHistoryProps) {
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Recent Tests</h3>
-        {data.history.map((record, index) => (
+        {processedHistory.map((record, index) => (
           <div key={index} className="bg-card p-4 rounded-lg">
             <div className="flex justify-between items-center">
               <div>

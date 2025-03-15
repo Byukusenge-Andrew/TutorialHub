@@ -14,19 +14,14 @@ export function Navbar() {
       href: '/tutorials'
     },
     {
-      label: 'DSA',
-      icon: Code2,
-      href: '/dsa'
-    },
-    {
-      label: 'Typing',
+      label: 'Type',
       icon: Keyboard,
       href: '/typing'
     },
     {
-      label: 'Community',
-      icon: Users,
-      href: '/community'
+      label: 'DSA Exercises',
+      icon: Code2,
+      href: '/dsa'
     }
   ];
 
@@ -39,7 +34,7 @@ export function Navbar() {
             TutorialHub
           </Link>
 
-          {/* Middle section - Nav Links */}
+          Middle section - Nav Links
           <div className="flex items-center justify-center gap-6">
             {navItems.map((item) => (
               <Link
@@ -75,4 +70,4 @@ export function Navbar() {
       </div>
     </nav>
   );
-} 
+}

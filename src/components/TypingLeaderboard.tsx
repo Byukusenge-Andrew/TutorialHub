@@ -37,7 +37,7 @@ export function TypingLeaderboard() {
       <div className="space-y-4">
         {sortedLeaderboard.map((entry, index) => (
           <div
-            key={entry.name}
+            key={`typing-entry-${index}`}
             className="flex items-center justify-between p-4 rounded-lg bg-background"
           >
             <div className="flex flex-col gap-1">

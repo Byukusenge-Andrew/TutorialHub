@@ -3,6 +3,7 @@ import { Users, BookOpen, BarChart2, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth-store';
 import { api } from '@/services/api';
+import { toast } from 'react-hot-toast';
 
 
 interface Stats {
@@ -11,6 +12,7 @@ interface Stats {
   totalCompletions: number;
   activeUsers: number;
   completionRate: number;
+  totalExercises: number;
 }
 
 export function AdminDashboard() {
@@ -21,20 +23,34 @@ export function AdminDashboard() {
     totalCompletions: 0,
     activeUsers: 0,
     completionRate: 0,
+    totalExercises: 0,
   });
 
-  useEffect(() => {
-    loadStats();
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const loadStats = async () => {
+  const fetchStats = async () => {
+    setIsLoading(true);
     try {
       const response = await api.admin.getStats();
-      setStats(response);
+      console.log('Admin stats data:', response);
+      if (response && typeof response === 'object') {
+        setStats(response as Stats);
+      } else {
+        console.error('Invalid response format');
+        toast.error('Failed to load dashboard data');
+      }
     } catch (error) {
-      console.error('Failed to load stats:', error);
+      console.error('Error fetching admin stats:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
   const {  user } = useAuthStore();
   return (
     <div className="space-y-8">
@@ -63,6 +79,15 @@ export function AdminDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total Users</p>
               <h3 className="text-2xl font-bold">{stats.totalUsers}</h3>
+            </div>
+          </div>
+        </div>
+        <div className="bg-card p-6 rounded-lg shadow-sm border border-border">
+          <div className="flex items-center space-x-3">
+            <BookOpen className="h-8 w-8 text-green-500" />
+            <div>
+              <p className="text-sm text-muted-foreground">Total Exercises</p>
+              <h3 className="text-2xl font-bold">{stats.totalExercises}</h3>
             </div>
           </div>
         </div>

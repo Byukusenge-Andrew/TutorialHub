@@ -32,10 +32,13 @@ export class CodeExecutionService {
 
       const solution = vm.run(wrappedCode);
       
+      // Define startTime variable here
+      let startTime = performance.now();
+      
       // Test against all test cases
       for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
-        const startTime = performance.now();
+        startTime = performance.now();
         
         try {
           const result = solution(testCase.input);
@@ -56,7 +59,7 @@ export class CodeExecutionService {
             passed: false,
             executionTime: performance.now() - startTime,
             memory: process.memoryUsage().heapUsed / 1024 / 1024,
-            error: error.message,
+            error: error instanceof Error ? error.message : String(error),
             failedTestCase: i
           };
         }
@@ -72,7 +75,7 @@ export class CodeExecutionService {
         passed: false,
         executionTime: 0,
         memory: process.memoryUsage().heapUsed / 1024 / 1024,
-        error: error.message
+        error: error instanceof Error ? error.message : String(error)
       };
     }
   }

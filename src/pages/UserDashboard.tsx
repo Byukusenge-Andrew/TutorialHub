@@ -1,16 +1,38 @@
 import { useAuthStore } from '@/store/auth-store';
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   User, Settings, BookOpen, Timer, Code2, 
   Keyboard, BookOpenCheck, BrainCircuit, MessageCircle 
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useAuth } from '@/providers/AuthProvider';
+import { toast } from 'react-hot-toast';
 
 export function UserDashboard() {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuth();
+  const navigate = useNavigate();
+  if(user?.role == "admin"){
+    navigate("/admin")
+  }
+
+  const fetchStats = async () => {
+    try {
+      const response = await api.dashboard.getStudentStats();
+      
+      if (response) {
+        setStats(response);
+      } else {
+        console.error('Invalid response format from dashboard stats API');
+        toast.error('Failed to load dashboard data');
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      toast.error('Failed to load dashboard data');
+    }
+  };
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['user-stats'],
@@ -23,8 +45,8 @@ export function UserDashboard() {
 
       
 
-      // Get the best score from typing history
-      const bestScore = typing.history.reduce((max, test) => 
+      
+      const bestScore = typing.history.reduce((max: number, test: { wpm: number }) => 
         test.wpm > max ? test.wpm : max, 0);
 
       return { 
@@ -35,7 +57,7 @@ export function UserDashboard() {
         }, 
         dsa,
         recentActivity: [
-          ...typing.history.slice(0, 3).map(test => ({
+          ...typing.history.slice(0, 3).map((test: { wpm: number; date: string }) => ({
             type: 'typing',
             title: `Typing Test: ${test.wpm} WPM`,
             date: test.date
@@ -216,4 +238,8 @@ function ActivityItem({ type, title, date }: any) {
       <span className="text-sm text-muted-foreground capitalize">{type}</span>
     </div>
   );
+}
+
+function setStats(response: any) {
+  throw new Error('Function not implemented.');
 }

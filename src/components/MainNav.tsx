@@ -11,7 +11,7 @@ export function MainNav() {
         <Keyboard className="h-4 w-4" />
         <span>Typing Practice</span>
       </Link>
-      {/* Other navigation items */}
+    
     </nav>
   );
 } 

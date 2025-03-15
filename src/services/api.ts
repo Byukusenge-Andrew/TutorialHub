@@ -3,8 +3,12 @@ import { Tutorial, Progress, DSAChallenge, TutorialProgress, Section, TutorialRe
 import { create } from 'domain';
 import axios from 'axios';
 import { Post } from '@/types/community';
+import { DSAExercise, SubmissionResult } from '@/types/dsa';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+
+// Add a debug log to verify the URL
+console.log('API URL:', API_URL);
 
 interface ApiResponse<T> {
   status: string;
@@ -44,6 +48,11 @@ interface TypingHistoryResponse {
   };
 }
 
+const getAuthHeaders = (): HeadersInit => {
+  const token = localStorage.getItem('token');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 const handleResponse = async <T>(response: Response): Promise<T> => {
   const data = await response.json();
   if (!response.ok) {
@@ -51,13 +60,6 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   }
   return data;
 };
-
-function getAuthHeader(): HeadersInit {
-  const token = localStorage.getItem('auth-storage')
-    ? JSON.parse(localStorage.getItem('auth-storage')!).state.token
-    : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
 
 export const api = {
   auth: {
@@ -91,7 +93,7 @@ export const api = {
 
     validate: async () => {
       const response = await fetch(`${API_URL}/auth/validate`, {
-        headers: getAuthHeader() as HeadersInit,
+        headers: getAuthHeaders() as HeadersInit,
       });
       return handleResponse<{ user: User }>(response);
     },
@@ -99,21 +101,23 @@ export const api = {
 
   tutorials: {
     getAll: async () => {
-      const response = await fetch(`${API_URL}/tutorials`, {
-        headers: getAuthHeader()
-      });
-      return handleResponse<{
-        status: string;
-        data: {
-          tutorials: Tutorial[];
-        };
-      }>(response);
+      try {
+        const response = await axios.get(`${API_URL}/tutorials/getall`, {
+          headers: getAuthHeaders() as any
+        });
+        console.log('Tutorials response:', response);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching tutorials:', error);
+        // Return empty data to prevent UI errors
+        return { status: 'error', data: { tutorials: [] } };
+      }
     },
 
     getTutorial: async (id: string) => {
       if (!id) throw new Error('Tutorial ID is required');
       const response = await fetch(`${API_URL}/tutorials/${id}`, {
-        headers: getAuthHeader()
+        headers: getAuthHeaders() as HeadersInit
       });
       return handleResponse<{
         status: string;
@@ -134,7 +138,7 @@ export const api = {
       const response = await fetch(`${API_URL}/tutorials/create`, {
         method: 'POST',
         headers: {
-          ...getAuthHeader(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         } as HeadersInit,
         body: JSON.stringify(tutorialData),
@@ -146,7 +150,7 @@ export const api = {
       try {
         const response = await fetch(`${API_URL}/tutorials/${id}`, {
           method: 'GET',
-          headers: getAuthHeader()
+          headers: getAuthHeaders()
         });
     
         if (!response.ok) {
@@ -165,7 +169,7 @@ export const api = {
       const response = await fetch(`${API_URL}/tutorials/${id}`, {
         method: 'PATCH',
         headers: {
-          ...getAuthHeader(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
         } as HeadersInit,
         body: JSON.stringify(tutorialData),
@@ -176,29 +180,32 @@ export const api = {
     delete: async (id: string) => {
       const response = await fetch(`${API_URL}/tutorials/${id}`, {
         method: 'DELETE',
-        headers: getAuthHeader() as HeadersInit,
+        headers: getAuthHeaders() as HeadersInit,
       });
       return handleResponse<{ success: boolean }>(response);
     },
 
     getCategories: async () => {
       const response = await fetch(`${API_URL}/tutorials/categories`, {
-        headers: getAuthHeader() as HeadersInit,
+        headers: getAuthHeaders() as HeadersInit,
       });
       return handleResponse<string[]>(response);
     },
 
     getUserProgress: async () => {
-      const response = await fetch(`${API_URL}/tutorials/progress`, {
-        headers: getAuthHeader()
-      });
-      return handleResponse<{
-        completed: number;
-        inProgress: number;
-        totalTime: number;
-      }>(response);
+      try {
+        const response = await axios.get(`${API_URL}/tutorials/progress`, {
+          headers: getAuthHeaders() as any
+        });
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching user progress:', error);
+        // Return default data to prevent dashboard errors
+        return { completed: 0, inProgress: 0 };
+      }
     },
   },
+  
 
   typing: {
     saveRecord: async (data: {
@@ -211,9 +218,9 @@ export const api = {
       const response = await fetch(`${API_URL}/typing/saveRecord`, {
         method: 'POST',
         headers: {
-          ...getAuthHeader(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json'
-        },
+        } as HeadersInit,
         body: JSON.stringify(data)
       });
       return handleResponse<{status: string, data: any}>(response);
@@ -229,9 +236,9 @@ export const api = {
       const response = await fetch(`${API_URL}/typing/results`, {
         method: 'POST',
         headers: {
-          ...getAuthHeader(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json'
-        },
+        } as HeadersInit,
         body: JSON.stringify(data)
       });
       return handleResponse<{status: string, data: any}>(response);
@@ -239,42 +246,20 @@ export const api = {
     
     getHistory: async () => {
       try {
-        const response = await fetch(`${API_URL}/typing/history`, {
-          headers: getAuthHeader()
+        const response = await axios.get(`${API_URL}/typing/history`, {
+          headers: getAuthHeaders() as any
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch typing history');
-        }
-
-        const result = await handleResponse<{
-          status: string;
-          data: {
-            history: Array<{
-              wpm: number;
-              accuracy: number;
-              score: number;
-              date: string;
-              duration: number;
-            }>;
-            stats: {
-              bestScore: number;
-              totalTests: number;
-              avgAccuracy: number;
-            };
-          };
-        }>(response);
-
-        return result.data;
+        return response.data;
       } catch (error) {
         console.error('Error fetching typing history:', error);
-        throw error;
+        // Return default data to prevent dashboard errors
+        return { history: [] };
       }
     },
 
     getAdminStats: async () => {
       const response = await fetch(`${API_URL}/typing/admin/stats`, {
-        headers: getAuthHeader()
+        headers: getAuthHeaders()
       });
       return handleResponse(response);
     },
@@ -282,7 +267,7 @@ export const api = {
     getLeaderboard: async () => {
       try {
         const response = await fetch(`${API_URL}/typing/leaderboard`, {
-          headers: getAuthHeader()
+          headers: getAuthHeaders()
         });
         
         if (!response.ok) {
@@ -301,31 +286,46 @@ export const api = {
       }
     },
 
-    getUserHistory: async (): Promise<TypingHistoryData> => {
+    getUserHistory: async () => {
       try {
         const response = await fetch(`${API_URL}/typing/history`, {
-          headers: getAuthHeader()
+          headers: getAuthHeaders()
         });
         
         if (!response.ok) {
+          // Return empty data structure on auth error
+          if (response.status === 401) {
+            console.log('User not authenticated, returning empty history');
+            return {
+              history: [],
+              stats: {
+                bestScore: 0,
+                totalTests: 0,
+                avgAccuracy: 0
+              }
+            };
+          }
           throw new Error('Failed to fetch user history');
         }
-
-        const result = await handleResponse<{
-          status: string;
-          data: TypingHistoryData;
-        }>(response);
-
-        return result.data;
+        
+        return handleResponse<TypingHistoryResponse>(response).then(data => data.data);
       } catch (error) {
         console.error('Error fetching user history:', error);
-        throw error;
+        // Return empty data structure on error
+        return {
+          history: [],
+          stats: {
+            bestScore: 0,
+            totalTests: 0,
+            avgAccuracy: 0
+          }
+        };
       }
     },
 
     getDashboardStats: async () => {
       const response = await fetch(`${API_URL}/typing/dashboard-stats`, {
-        headers: getAuthHeader()
+        headers: getAuthHeaders()
       });
       return handleResponse(response);
     }
@@ -334,7 +334,7 @@ export const api = {
   dsa: {
     getChallenges: async (filters?: { difficulty?: string; category?: string; tag?: string }) => {
       const params = new URLSearchParams(filters);
-      const response = await fetch(`${API_URL}/dsa/challenges?${params}`);
+      const response = await fetch(`${API_URL}/dsa/getall?${params}`);
       const data = await handleResponse<{ data: any }>(response);
       return data.data;
     },
@@ -346,25 +346,44 @@ export const api = {
     },
 
     submitSolution: async (id: string, code: string, language: string) => {
-      const response = await fetch(`${API_URL}/dsa/challenges/${id}/submit`, {
+      const response = await fetch(`${API_URL}/dsa/exercises/${id}/submit`, {
         method: 'POST',
         headers: {
-          ...getAuthHeader(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json'
-        },
+        } as HeadersInit,
         body: JSON.stringify({ code, language })
       });
+      return handleResponse<SubmissionResult>(response);
+    },
+
+    getExercises: async (difficulty?: string | null, category?: string | null) => {
+      const params = new URLSearchParams();
+      if (difficulty) params.append('difficulty', difficulty);
+      if (category) params.append('category', category);
+      
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const response = await fetch(`${API_URL}/dsa/exercises${queryString}`, {
+        headers: getAuthHeaders(),
+      });
       return handleResponse(response);
+    },
+
+    getExercise: async (id: string) => {
+      const response = await fetch(`${API_URL}/dsa/exercises/${id}`, {
+        headers: getAuthHeaders() as HeadersInit
+      });
+      return handleResponse<DSAExercise>(response);
     },
 
     createChallenge: async (challenge: any) => {
       const response = await fetch('/api/dsa/challengescreate', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(challenge),
+        body: JSON.stringify(challenge)
       });
       
       if (!response.ok) {
@@ -376,35 +395,82 @@ export const api = {
 
     getUserStats: async () => {
       const response = await fetch(`${API_URL}/dsa/user-stats`, {
-        headers: getAuthHeader()
+        headers: getAuthHeaders() as HeadersInit
       });
-      return handleResponse<{
-        solved: number;
-        totalAttempted: number;
-        successRate: number;
-      }>(response);
+      return handleResponse<any>(response);
+    },
+
+    testSolution: async (solution: string, input: string) => {
+      const response = await fetch('/api/dsa/test-solution', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ solution, input }),
+      });
+      return response.json();
     },
   },
 
   admin: {
     getStats: async () => {
-      const response = await fetch(`${API_URL}/admin/stats`, {
-        headers: getAuthHeader() as HeadersInit,
+      try {
+        // First try to get data from the API
+        const response = await fetch(`${API_URL}/admin/stats`, {
+          headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        return handleResponse(response).then(data => {
+          // Add type assertion or validation
+          if (data && typeof data === 'object' && 'data' in data) {
+            return data.data;
+          }
+          throw new Error('Invalid response format');
+        });
+      } catch (error) {
+        console.error('Error fetching admin stats:', error);
+        
+        // For development/demo purposes, return mock data when the API is unavailable
+        console.log('Returning mock admin stats data');
+        return {
+          totalUsers: 125,
+          totalTutorials: 42,
+          totalCompletions: 78,
+          activeUsers: 63,
+          completionRate: '65%'
+        };
+      }
+    },
+    getUsers: async () => {
+      const response = await fetch(`${API_URL}/admin/users`, {
+        headers: getAuthHeaders()
       });
-      return handleResponse<{
-        totalTutorials: number;
-        totalUsers: number;
-        totalCompletions: number;
-        activeUsers: number;
-        completionRate: number;
-      }>(response);
+      const data = await handleResponse(response);
+      return data;
+    },
+    deleteUser: async (userId: string) => {
+      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      return handleResponse(response);
+    },
+    getAnalytics: async () => {
+      const response = await fetch(`${API_URL}/admin/analytics`, {
+        headers: getAuthHeaders()
+      });
+      return handleResponse(response);
     },
   },
   progress:{
     getProgress: async (userId: string) => {
       try {
         const response = await fetch(`${API_URL}/progress/${userId}`, {
-          headers: getAuthHeader() as HeadersInit,
+          headers: getAuthHeaders() as HeadersInit,
         });
         return handleResponse<TutorialProgress>(response);
       } catch (error) {
@@ -416,9 +482,9 @@ export const api = {
       const response = await fetch(`${API_URL}/progress/${tutorialId}`, {
         method: 'POST',
         headers: {
-          ...getAuthHeader(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
-        },
+        } as HeadersInit,
         body: JSON.stringify({ completedSection }),
       });
       return handleResponse<{ progress: any }>(response);
@@ -426,7 +492,7 @@ export const api = {
 
     getAllProgress: async () => {
       const response = await fetch(`${API_URL}/progress`, {
-        headers: getAuthHeader(),
+        headers: getAuthHeaders(),
       });
       return handleResponse<{ progress: any[] }>(response);
     },
@@ -436,7 +502,7 @@ export const api = {
     getPosts: async () => {
       try {
         const response = await fetch(`${API_URL}/community/posts`, {
-          headers: getAuthHeader(),
+          headers: getAuthHeaders(),
         });
         
         if (!response.ok) {
@@ -452,7 +518,7 @@ export const api = {
 
     getPost: async (id: string) => {
       const response = await fetch(`${API_URL}/community/posts/${id}`, {
-        headers: getAuthHeader(),
+        headers: getAuthHeaders(),
       });
       return handleResponse<{ status: string; data: Post }>(response);
     },
@@ -462,9 +528,9 @@ export const api = {
         const response = await fetch(`${API_URL}/community/posts`, {
           method: 'POST',
           headers: {
-            ...getAuthHeader(),
+            ...getAuthHeaders(),
             'Content-Type': 'application/json',
-          },
+          } as HeadersInit,
           body: JSON.stringify(data),
         });
 
@@ -486,9 +552,9 @@ export const api = {
       const response = await fetch(`${API_URL}/community/posts/${postId}/comments`, {
         method: 'POST',
         headers: {
-          ...getAuthHeader(),
+          ...getAuthHeaders(),
           'Content-Type': 'application/json',
-        },
+        } as HeadersInit,
         body: JSON.stringify({ content }),
       });
       return handleResponse(response);
@@ -497,7 +563,7 @@ export const api = {
     likePost: async (postId: string) => {
       const response = await fetch(`${API_URL}/community/posts/${postId}/like`, {
         method: 'POST',
-        headers: getAuthHeader(),
+        headers: getAuthHeaders(),
       });
       return handleResponse(response);
     },
@@ -506,17 +572,33 @@ export const api = {
   dashboard: {
     getStats: async () => {
       const response = await fetch(`${API_URL}/dashboard/stats`, {
-        headers: getAuthHeader()
+        headers: getAuthHeaders()
       });
       return handleResponse(response);
     },
 
     getStudentStats: async (): Promise<any> => {
-      const response = await fetch(`${API_URL}/dashboard/student-stats`, {
-        headers: getAuthHeader()
-      });
-      const data = await handleResponse<{ status: string; data: any }>(response);
-      return data.data;
+      try {
+        const response = await fetch(`${API_URL}/dashboard/student-stats`, {
+          headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await handleResponse<{ status: string; data: any }>(response);
+        return data.data;
+      } catch (error) {
+        console.error('Error fetching student stats:', error);
+        // Return default data to prevent dashboard errors
+        return {
+          tutorials: { completed: 0, inProgress: 0 },
+          typing: { avgWpm: 0, avgAccuracy: 0, bestWpm: 0, totalTests: 0 },
+          dsa: { solved: 0, totalAttempted: 0, successRate: 0 },
+          community: { posts: 0, comments: 0 }
+        };
+      }
     }
   },
 };

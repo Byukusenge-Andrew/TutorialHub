@@ -57,7 +57,7 @@ export function TypingPage() {
 
   const { data: history } = useQuery({
     queryKey: ['typing-history'],
-    queryFn: () => api.typing.getHistory(),
+    queryFn: () => api.typing.getUserHistory(),
     staleTime: 30000,
   });
   useEffect(() => {

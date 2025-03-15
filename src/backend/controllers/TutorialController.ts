@@ -37,7 +37,7 @@ export class TutorialController {
 
   getTutorials = catchAsync(async (req: Request, res: Response) => {
     const tutorials = await TutorialService.getTutorials(req.query);
-    
+    console.log(tutorials)
     res.status(200).json({
       status: 'success',
       results: tutorials.length,

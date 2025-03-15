@@ -8,20 +8,23 @@ export function Home() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setIsLoading(true);
         const tutorialsResponse = await api.tutorials.getAll();
-        if (Array.isArray(tutorialsResponse)) {
-          setTutorials(tutorialsResponse);
+        if (tutorialsResponse?.data?.tutorials && Array.isArray(tutorialsResponse.data.tutorials)) {
+          setTutorials(tutorialsResponse.data.tutorials);
         } else {
-          throw new Error('Unexpected API response format');
+          console.log('Unexpected API response format:', tutorialsResponse);
+          setTutorials([]); // Set empty array instead of throwing error
         }
       } catch (err) {
         console.error('Failed to load data:', err);
         setError('Failed to load tutorials. Please try again later.');
+        setTutorials([]); // Set empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -31,7 +34,7 @@ export function Home() {
   }, []);
 
   const FeaturedTutorialCard = ({ tutorial }: { tutorial: Tutorial }) => (
-    <div className="bg-white dark:bg-slate-900 hover:bg-slate-200 hover:dark:bg-gray-900/65  rounded-lg shadow-lg text-center">
+    <div className="bg-white dark:bg-slate-300/35 hover:bg-slate-200 hover:dark:bg-gray-900/65  rounded-lg shadow-lg text-center">
       <div className="p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold">{tutorial.title}</h3>
@@ -107,9 +110,9 @@ export function Home() {
             <>
             <div className="flex flex-row gap-1 w-full box-border">
               
-              {tutorials.slice(0, 3).map((tutorial) => (
-                <div className='rounded-lg  p-2 text-center'>
-                <FeaturedTutorialCard key={tutorial._id} tutorial={tutorial}
+              {tutorials.slice(0, 3).map((tutorial, index) => (
+                <div key={tutorial._id || index} className='rounded-lg  p-2 text-center'>
+                <FeaturedTutorialCard tutorial={tutorial}
                 
                 />
                 </div>

@@ -13,6 +13,7 @@ export interface AuthRequest extends Request {
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '');
+    console.log('Token:', token);
     if (!token) {
       throw new AuthError('No token provided');
     }
@@ -27,6 +28,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
     req.user = user;
     next();
   } catch (error) {
+    console.error('Authorization error:', error);
     next(new AuthError('Not authorized'));
   }
 };
