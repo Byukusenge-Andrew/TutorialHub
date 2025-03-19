@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 
 export const sendEmail = async (to: string, name: string) => {
     const mailOptions = {
-        from: `noreply@${process.env.MAILSEND_DOMAIN}`, // sender address
+        from: `${name}@${process.env.MAILSEND_DOMAIN}`, // sender address
         to, // list of receivers
         subject: 'Welcome!', // Subject line
         text: `Hello ${name}, welcome to our platform!`, // plain text body

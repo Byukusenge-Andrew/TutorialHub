@@ -13,11 +13,19 @@ export const VerifyEmail = () => {
     const verifyEmail = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/verify-email/${token}`);
-        
-        if (response.data.status === 'success') {
-          setVerified(true);
+        // const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/verify-email/${token}`);
+        if (import.meta.env.VITE_API_URL === 'http://localhost:3000/api') {
+          const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/verify-email/${token}`);
+          if (response.data.status === 'success') {
+            setVerified(true);
+          }
+        } else if (import.meta.env.VITE_API_URL === 'https://tutorial-hub-01.vercel.app/api') {
+          const response = await axios.get(`${import.meta.env.VITE_API_PROD_URL}/auth/verify-email/${token}`);
+          if (response.data.status === 'success') {
+            setVerified(true);
+          }
         }
+        
       } catch (error: any) {
         console.error('Verification error:', error);
         setError(error.response?.data?.message || 'Failed to verify email. The link may be invalid or expired.');
