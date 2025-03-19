@@ -92,12 +92,30 @@ export const sendChallengeCompletionEmail = async (email: string, challengeName:
     <p>Keep up the great work!</p>
   `;
 
-  return emailService.sendEmail(email, subject, content);
+  try {
+    const mailOptions = {
+      from: `"Code Learning Platform" <${process.env.MAILSEND_USERNAME}>`,
+      to: email,
+      subject,
+      html: content
+    };
+
+    await transporter.sendMail(mailOptions);
+    logger.info(`Challenge completion email sent to ${email}`);
+    return true;
+  } catch (error) {
+    logger.error('Error sending challenge completion email:', error);
+    throw error;
+  }
 };
 
 // Function to send verification email
 export const sendVerificationEmail = async (to: string, name: string, token: string) => {
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  // const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+  //if dev
+  // const frontendUrl = 'http://localhost:5173';
+  //if prod
+  const frontendUrl = 'https://tutorial-hub-01.vercel.app';
   const verificationUrl = `${frontendUrl}/verify-email/${token}`;
   
   try {
