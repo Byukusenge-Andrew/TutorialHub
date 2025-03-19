@@ -55,7 +55,7 @@ export const Navigation = () => {
             {isAuthenticated ? (
               <>
                 <div className="relative group">
-                  <Button onClick={() => setDropdownOpen(!dropdownOpen)} >
+                  <Button variant={'outline'} onClick={() => setDropdownOpen(!dropdownOpen)} >
                     <span>{user?.name.charAt(0)}</span>
                   </Button>
                   {dropdownOpen && (
