@@ -11,25 +11,42 @@ import { Button } from '@/components/ui/button';
 import { Search, Filter } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 
+// Add this near the top of your file, after the imports
+// This extends the existing DSAExercise type with the _id property
+type DSAExerciseWithId = DSAExercise & { _id: string };
+
 export function DSAExercises() {
   const { user } = useAuth();
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [category, setCategory] = useState<string | null>(null);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery<DSAExerciseWithId[], Error>({
     queryKey: ['dsa-exercises', difficulty, category],
-    queryFn: () => api.dsa.getExercises(difficulty, category),
+    queryFn: async () => {
+      const result = await api.dsa.getExercises(difficulty, category);
+      return result as DSAExerciseWithId[];
+    },
   });
 
-  const exercises = data || [];
-  const filteredExercises = exercises.filter((exercise: DSAExercise) => {
+  // Ensure exercises is always an array
+  const exercises: DSAExerciseWithId[] = Array.isArray(data) ? data : [];
+  
+  // Now filter will work because exercises is guaranteed to be an array
+  const filteredExercises = exercises.filter((exercise) => {
+    // Apply difficulty filter
     if (difficulty && exercise.difficulty !== difficulty) return false;
+    // Apply category filter
     if (category && exercise.category !== category) return false;
+    // Apply search filter (case insensitive)
+    if (search && !exercise.title.toLowerCase().includes(search.toLowerCase()) && 
+        !exercise.description.toLowerCase().includes(search.toLowerCase())) {
+      return false;
+    }
     return true;
   });
 
-  const categories = [...new Set(exercises?.map(e => e.category) || [])];
+  const categories = [...new Set(exercises.map(e => e.category) || [])];
 
   if (isLoading) {
     return (
@@ -99,8 +116,8 @@ export function DSAExercises() {
 
       {/* Exercise Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredExercises.map((exercise: DSAExercise) => (
-          <Link key={exercise._id} to={`/dsa/${exercise._id}`}>
+        {filteredExercises.map((exercise) => (
+          <Link key={exercise._id?.toString()} to={`/dsa/${exercise._id}`}>
             <Card className="hover:shadow-lg transition-shadow h-full">
               <CardHeader>
                 <div className="flex justify-between items-start">
