@@ -6,12 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '@/providers/AuthProvider';
+import EditUser from '../../components/EditUser';
+import { Navigate, redirect } from 'react-router-dom';
+import { set } from 'mongoose';
 
 export function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const currentUser = useAuth();
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  // console.log("Current user:", currentUser);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -36,24 +42,27 @@ export function AdminUsers() {
     fetchUsers();
   }, []);
 
-  useEffect(() => {
-    console.log("Current user ID:", currentUser?.user?.id);
-    console.log("User IDs from API:", users.map(u => u.id));
-  }, [users, currentUser]);
+  // useEffect(() => {
+  //   console.log("Current user ID:", currentUser?.user?._id);
+  //   console.log("User IDs from API:", users.map(u => u._id));
+  // }, [users, currentUser]);
 
   const handleEditUser = (user: User) => {
-    // For now just show a toast
     toast.info(`Edit user: ${user.name}`);
-    // Later you can implement a modal or redirect to edit page
+    setIsEditDialogOpen(true);
+    setSelectedUser(user);
+    // The issue is that returning JSX from an event handler doesn't render it
+    // Instead, we should set state that controls whether the component is rendered
+    // The EditUser component should be rendered in the main component return statement
   };
 
   const handleDeleteUser = async (userId: string) => {
+    // console.log("Deleting user:", userId);
     if (confirm('Are you sure you want to delete this user?')) {
       try {
         await api.admin.deleteUser(userId);
         toast.success('User deleted successfully');
-        // Remove the user from the state
-        setUsers(users.filter(user => user.id !== userId));
+        setUsers(users.filter(user => user._id !== userId));
       } catch (error) {
         console.error('Error deleting user:', error);
         toast.error('Failed to delete user');
@@ -67,6 +76,9 @@ export function AdminUsers() {
 
   if (error) {
     return <div className="text-red-500 p-8">{error}</div>;
+  }
+  if(isEditDialogOpen && selectedUser){
+    return <EditUser user={selectedUser} />
   }
 
   return (
@@ -91,14 +103,14 @@ export function AdminUsers() {
           </TableHeader>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow key={user._id}>
                 <TableCell className="font-medium">{user.name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
                   <Badge variant={user.role === 'admin' ? 'default' : 'outline'}>
                     {user.role}
                   </Badge>
-                  '{currentUser?.user?.email === user.email && (
+                  {currentUser?.user?.email === user.email && (
                     <Badge key="current-user" variant="outline" className="ml-2">
                       Current User
                     </Badge>
@@ -121,8 +133,8 @@ export function AdminUsers() {
                     <Button 
                       variant="destructive" 
                       size="sm"
-                      onClick={() => handleDeleteUser(user.id)}
-                      disabled={currentUser?.user?.email === user.email}
+                      onClick={() => handleDeleteUser(user._id)}
+                      disabled={currentUser?.user?._id === user._id}
                     >
                       Delete
                     </Button>

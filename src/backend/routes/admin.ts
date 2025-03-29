@@ -11,5 +11,6 @@ const router = Router();
 router.get('/stats', protect, AdminController.getStats);
 router.get('/users', protect, AdminController.getUsers);
 router.get('/analytics', protect, AdminController.getAnalytics);
-
+router.put('/users/update/:userId', protect, AdminController.updateUser);
+router.delete('/users/delete/:userId', protect, AdminController.deleteUser);
 export default router; 

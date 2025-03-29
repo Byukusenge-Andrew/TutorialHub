@@ -55,7 +55,9 @@ export const Navigation = () => {
             {isAuthenticated ? (
               <>
                 <div className="relative group">
-                  <Button variant={'outline'} onClick={() => setDropdownOpen(!dropdownOpen)} >
+                  <Button variant={'outline'} onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className='bg-blue-900 text-white px-4 py-2 rounded-md hover:bg-blue-500'
+                   >
                     <span>{user?.name.charAt(0)}</span>
                   </Button>
                   {dropdownOpen && (

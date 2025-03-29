@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { Plus, Save, Trash2, Play } from 'lucide-react';
-import { useDSAStore } from '../store/dsa-store';
-import { TestCase } from '../types';
+import { useDSAStore } from '../../store/dsa-store';
+import { TestCase } from '../../types';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -211,7 +211,7 @@ export function CreateDSAChallenge() {
             .replace('}', '')
             .replace('return', '    return')
         },
-        authorId: user?.id
+        authorId: user?._id
       };
 
       const response = await api.dsa.createChallenge(challengeData);

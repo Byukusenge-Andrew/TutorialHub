@@ -21,7 +21,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           const match = /language-(\w+)/.exec(className || '');
           return !inline && match ? (
             <SyntaxHighlighter
-               style={{theme:oneDark}}
+              style={oneDark}
               language={match[1]}
               PreTag="div"
               {...props}

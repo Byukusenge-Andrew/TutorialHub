@@ -66,7 +66,7 @@ export function DSAExercises() {
         <h1 className="text-3xl font-bold">DSA Exercises</h1>
         {
           user?.role == "admin" && (
-            <Button variant="outline" asChild>
+            <Button variant="default" asChild>
               <Link to="/dsa/create">Create Exercise</Link>
             </Button>
           )
@@ -85,14 +85,13 @@ export function DSAExercises() {
           />
         </div>
         
-        <div>
-          <label className="block text-sm font-medium mb-1">Difficulty</label>
+        <div className=''>
           <select 
             className="border rounded p-2"
             value={difficulty || ''}
             onChange={(e) => setDifficulty(e.target.value || null)}
           >
-            <option value="">All</option>
+            <option value="">Difficulty</option>
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
             <option value="hard">Hard</option>
@@ -100,13 +99,12 @@ export function DSAExercises() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Category</label>
           <select 
             className="border rounded p-2"
             value={category || ''}
             onChange={(e) => setCategory(e.target.value || null)}
           >
-            <option value="">All</option>
+            <option value="">Category</option>
             {categories.map(cat => (
               <option key={cat} value={cat}>{cat}</option>
             ))}

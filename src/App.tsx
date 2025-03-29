@@ -17,7 +17,7 @@ import { Profile } from './pages/Profile';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { UserDashboard } from './pages/UserDashboard';
 import { DSAChallenge } from './pages/DSAChallenge';
-import { CreateDSAChallenge } from './pages/CreateDSAChallenge';
+import { CreateDSAChallenge } from './pages/admin/CreateDSAChallenge';
 import { TypingPage } from './pages/TypingPage';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
@@ -34,6 +34,7 @@ import { CreatePostPage } from '@/pages/CreatePostPage';
 import { PostDetailPage } from '@/pages/PostDetailPage';
 import { RegistrationSuccess } from './pages/RegistrationSuccess';
 import { AuthWrapper } from '@/components/AuthWrapper';
+import EditUser from './components/EditUser';
 
 function App() {
   
@@ -73,6 +74,11 @@ function App() {
                 <AdminUsers />
               </ProtectedRoute>
             } />
+            {/* <Route path="/admin/edit-user" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <EditUser />
+              </ProtectedRoute>
+            } /> */}
             <Route path="/admin/analytics" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <AdminAnalytics />

@@ -1,15 +1,16 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { User } from '../types/auth';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  isVerified: boolean;
-  avatar?: string;  // Make avatar optional since not all users will have one
-}
+// interface User {
+//   _id: string;
+//   name: string;
+//   email: string;
+//   role: string;
+//   isVerified: boolean;
+//   avatar?: string;  // Make avatar optional since not all users will have one
+// }
 
 interface AuthContextType {
   user: User | null;

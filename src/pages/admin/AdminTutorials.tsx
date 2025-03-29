@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Tutorial } from '@/types';
+import { Button } from '@/components/ui/button';
 
 export function AdminTutorials() {
   const [tutorials, setTutorials] = useState([]);
@@ -17,6 +18,11 @@ export function AdminTutorials() {
       setTutorials(data.data.tutorials);
     }
   }, [data]);
+  
+  const handleDeleteTutorial = async (tutorialId: string) => {
+    await api.tutorials.delete(tutorialId);
+    window.location.reload();
+  };
    
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
@@ -62,16 +68,22 @@ export function AdminTutorials() {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
-                      <button className="text-blue-500 hover:text-blue-700"
+                      <Button className="text-blue-500 hover:text-blue-700"
+                      variant="destructive"
+                      size="sm"
                       title="Edit Tutorial"
                       >
                         <Edit className="w-4 h-4" />
-                      </button>
-                      <button className="text-red-500 hover:text-red-700"
+                      </Button>
+                      <Button 
+                      variant="destructive"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700"
                       title='Delete Tutorial'
+                      onClick={() => handleDeleteTutorial(tutorial._id)}
                       >
                         <Trash2 className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </td>
                 </tr>

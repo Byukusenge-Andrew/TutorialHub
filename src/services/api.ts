@@ -413,6 +413,17 @@ export const api = {
   },
 
   admin: {
+    updateUser: async (userId: string, user: User) => {
+      const response = await fetch(`${API_URL}/admin/users/update/${userId}`, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        } as HeadersInit,
+        body: JSON.stringify(user),
+      });
+      return handleResponse(response);
+    },
     getStats: async () => {
       try {
         // First try to get data from the API
@@ -453,7 +464,7 @@ export const api = {
       return data;
     },
     deleteUser: async (userId: string) => {
-      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+      const response = await fetch(`${API_URL}/admin/users/delete/${userId}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });

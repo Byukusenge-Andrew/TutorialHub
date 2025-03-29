@@ -6,6 +6,7 @@ import Progress from '../models/Progress';
 import { DSAExercise } from '../models/DSAExercise';
 import Post from '../models/Post';
 import TypingStats from '../models/TypingStats';
+import mongoose from 'mongoose';
 
 class AdminController {
   getStats = catchAsync(async (req: Request, res: Response) => {
@@ -58,6 +59,22 @@ class AdminController {
   getUsers = catchAsync(async (req: Request, res: Response) => {
     const users = await User.find();
     res.json({ status: 'success', data: users });
+  });
+  
+  deleteUser = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+    await User.findByIdAndDelete(userId);
+    res.json({ status: 'success', message: 'User deleted successfully' });
+  });
+
+  updateUser = catchAsync(async (req: Request, res: Response) => {
+    const { userId } = req.params;
+    const { name, email, role } = req.body;
+    await User.findByIdAndUpdate(userId, { name, email, role });
+    res.json({ status: 'success', message: 'User updated successfully' });
   });
 
   getAnalytics = catchAsync(async (req: Request, res: Response) => {
