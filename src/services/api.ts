@@ -1,34 +1,14 @@
 import { User } from '@/types/auth';
-import { Tutorial, Progress, DSAChallenge, TutorialProgress, Section, TutorialResponse } from '@/types';
-import { create } from 'domain';
+import { Tutorial, TutorialProgress, Section } from '@/types';
 import axios from 'axios';
 import { Post } from '@/types/community';
-import { DSAExercise, SubmissionResult } from '@/types/dsa';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Add a debug log to verify the URL
 console.log('API URL:', API_URL);
 
-interface ApiResponse<T> {
-  status: string;
-  data: T;
-}
 
-interface TypingHistoryData {
-  history: Array<{
-    wpm: number;
-    accuracy: number;
-    date: string;
-    duration: number;
-  }>;
-  stats: {
-    avgWpm: number;
-    avgAccuracy: number;
-    bestWpm: number;
-    totalTests: number;
-  };
-}
 
 interface TypingHistoryResponse {
   status: string;
@@ -100,10 +80,11 @@ export const api = {
   },
 
   tutorials: {
-    getAll: async () => {
+    getAll: async (params?: Record<string, string | number>) => {
       try {
         const response = await axios.get(`${API_URL}/tutorials/getall`, {
-          headers: getAuthHeaders() as any
+          params,
+          headers: getAuthHeaders() as Record<string, string>
         });
         console.log('Tutorials response:', response);
         return response.data;
@@ -152,11 +133,11 @@ export const api = {
           method: 'GET',
           headers: getAuthHeaders()
         });
-    
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-    
+
         const data = await response.json();
         return data; // Return entire response structure
       } catch (error) {
@@ -195,7 +176,7 @@ export const api = {
     getUserProgress: async () => {
       try {
         const response = await axios.get(`${API_URL}/tutorials/progress`, {
-          headers: getAuthHeaders() as any
+          headers: getAuthHeaders() as Record<string, string>
         });
         return response.data;
       } catch (error) {
@@ -205,12 +186,12 @@ export const api = {
       }
     },
   },
-  
+
 
   typing: {
     saveRecord: async (data: {
       wpm: number,
-      accuracy: number, 
+      accuracy: number,
       duration: number,
       characters: number,
       errors: number
@@ -223,12 +204,12 @@ export const api = {
         } as HeadersInit,
         body: JSON.stringify(data)
       });
-      return handleResponse<{status: string, data: any}>(response);
+      return handleResponse<{ status: string, data: unknown }>(response);
     },
 
     savestatResult: async (data: {
       wpm: number,
-      accuracy: number, 
+      accuracy: number,
       duration: number,
       characters: number,
       errors: number
@@ -241,13 +222,13 @@ export const api = {
         } as HeadersInit,
         body: JSON.stringify(data)
       });
-      return handleResponse<{status: string, data: any}>(response);
+      return handleResponse<{ status: string, data: unknown }>(response);
     },
-    
+
     getHistory: async () => {
       try {
         const response = await axios.get(`${API_URL}/typing/history`, {
-          headers: getAuthHeaders() as any
+          headers: getAuthHeaders() as Record<string, string>
         });
         return response.data;
       } catch (error) {
@@ -269,14 +250,14 @@ export const api = {
         const response = await fetch(`${API_URL}/typing/leaderboard`, {
           headers: getAuthHeaders()
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch leaderboard');
         }
 
         const data = await handleResponse<{
           status: string;
-          data: any[];
+          data: unknown[];
         }>(response);
 
         return data.data; // Return the array directly
@@ -291,7 +272,7 @@ export const api = {
         const response = await fetch(`${API_URL}/typing/history`, {
           headers: getAuthHeaders()
         });
-        
+
         if (!response.ok) {
           // Return empty data structure on auth error
           if (response.status === 401) {
@@ -307,7 +288,7 @@ export const api = {
           }
           throw new Error('Failed to fetch user history');
         }
-        
+
         return handleResponse<TypingHistoryResponse>(response).then(data => data.data);
       } catch (error) {
         console.error('Error fetching user history:', error);
@@ -335,49 +316,84 @@ export const api = {
     getChallenges: async (filters?: { difficulty?: string; category?: string; tag?: string }) => {
       const params = new URLSearchParams(filters);
       const response = await fetch(`${API_URL}/dsa/getall?${params}`);
-      const data = await handleResponse<{ data: any }>(response);
+      const data = await handleResponse<{ data: unknown }>(response);
       return data.data;
     },
 
     getChallenge: async (id: string) => {
       const response = await fetch(`${API_URL}/dsa/challenges/${id}`);
-      const data = await handleResponse<{ data: any }>(response);
+      const data = await handleResponse<{ data: unknown }>(response);
       return data.data;
     },
 
-    submitSolution: async (id: string, code: string, language: string) => {
-      const response = await fetch(`${API_URL}/dsa/exercises/${id}/submit`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeaders(),
-          'Content-Type': 'application/json'
-        } as HeadersInit,
-        body: JSON.stringify({ code, language })
-      });
-      return handleResponse<SubmissionResult>(response);
-    },
+    getExercises: async (difficulty?: string, category?: string) => {
+      try {
+        const params = new URLSearchParams();
+        if (difficulty) params.append('difficulty', difficulty);
+        if (category) params.append('category', category);
 
-    getExercises: async (difficulty?: string | null, category?: string | null) => {
-      const params = new URLSearchParams();
-      if (difficulty) params.append('difficulty', difficulty);
-      if (category) params.append('category', category);
-      
-      const queryString = params.toString() ? `?${params.toString()}` : '';
-      const response = await fetch(`${API_URL}/dsa/exercises${queryString}`, {
-        headers: getAuthHeaders(),
-      });
-      return handleResponse(response);
+        const response = await axios.get(`${API_URL}/dsa/exercises?${params.toString()}`);
+        return response.data.data;
+      } catch (error) {
+        console.error('Error fetching DSA exercises:', error);
+        return [];
+      }
     },
 
     getExercise: async (id: string) => {
-      const response = await fetch(`${API_URL}/dsa/exercises/${id}`, {
-        headers: getAuthHeaders() as HeadersInit
-      });
-      return handleResponse<DSAExercise>(response);
+      try {
+        const response = await axios.get(`${API_URL}/dsa/exercises/${id}`);
+        return response.data.data;
+      } catch (error) {
+        console.error('Error fetching DSA exercise:', error);
+        throw error;
+      }
     },
 
-    createChallenge: async (challenge: any) => {
-      const response = await fetch('/api/dsa/challengescreate', {
+    submitSolution: async (id: string, code: string, language: string) => {
+      try {
+        const response = await axios.post(`${API_URL}/dsa/exercises/${id}/submit`, {
+          code,
+          language
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        return response.data.data;
+      } catch (error: unknown) {
+        console.error('Error submitting solution:', error);
+        const errorMessage = axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : 'Failed to submit solution';
+        throw new Error(errorMessage || 'Failed to submit solution');
+      }
+    },
+
+    runTests: async (id: string, code: string, language: string) => {
+      try {
+        const response = await axios.post(`${API_URL}/dsa/exercises/${id}/run`, {
+          code,
+          language
+        }, {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        return response.data.data;
+      } catch (error: unknown) {
+        console.error('Error running tests:', error);
+        const errorMessage = axios.isAxiosError(error)
+          ? error.response?.data?.message
+          : 'Failed to run tests';
+        throw new Error(errorMessage || 'Failed to run tests');
+      }
+    },
+
+    createChallenge: async (challenge: unknown) => {
+      const response = await fetch('/api/dsa/exercises/create', {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
@@ -385,11 +401,11 @@ export const api = {
         },
         body: JSON.stringify(challenge)
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to create challenge');
       }
-      
+
       return response.json();
     },
 
@@ -397,7 +413,7 @@ export const api = {
       const response = await fetch(`${API_URL}/dsa/user-stats`, {
         headers: getAuthHeaders() as HeadersInit
       });
-      return handleResponse<any>(response);
+      return handleResponse<unknown>(response);
     },
 
     testSolution: async (solution: string, input: string) => {
@@ -430,11 +446,11 @@ export const api = {
         const response = await fetch(`${API_URL}/admin/stats`, {
           headers: getAuthHeaders()
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         return handleResponse(response).then(data => {
           // Add type assertion or validation
           if (data && typeof data === 'object' && 'data' in data) {
@@ -444,7 +460,7 @@ export const api = {
         });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
-        
+
         // For development/demo purposes, return mock data when the API is unavailable
         console.log('Returning mock admin stats data');
         return {
@@ -477,7 +493,7 @@ export const api = {
       return handleResponse(response);
     },
   },
-  progress:{
+  progress: {
     getProgress: async (userId: string) => {
       try {
         const response = await fetch(`${API_URL}/progress/${userId}`, {
@@ -498,14 +514,14 @@ export const api = {
         } as HeadersInit,
         body: JSON.stringify({ completedSection }),
       });
-      return handleResponse<{ progress: any }>(response);
+      return handleResponse<{ progress: unknown }>(response);
     },
 
     getAllProgress: async () => {
       const response = await fetch(`${API_URL}/progress`, {
         headers: getAuthHeaders(),
       });
-      return handleResponse<{ progress: any[] }>(response);
+      return handleResponse<{ progress: unknown[] }>(response);
     },
   },
 
@@ -515,7 +531,7 @@ export const api = {
         const response = await fetch(`${API_URL}/community/posts`, {
           headers: getAuthHeaders(),
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch posts');
         }
@@ -588,17 +604,17 @@ export const api = {
       return handleResponse(response);
     },
 
-    getStudentStats: async (): Promise<any> => {
+    getStudentStats: async (): Promise<unknown> => {
       try {
         const response = await fetch(`${API_URL}/dashboard/student-stats`, {
           headers: getAuthHeaders()
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        const data = await handleResponse<{ status: string; data: any }>(response);
+
+        const data = await handleResponse<{ status: string; data: unknown }>(response);
         return data.data;
       } catch (error) {
         console.error('Error fetching student stats:', error);
@@ -611,12 +627,5 @@ export const api = {
         };
       }
     }
-  },
-};
-
-const progress = {
-  getAllProgress: async () => {
-    const response = await axios.get('/api/progress');
-    return response.data;
   },
 };

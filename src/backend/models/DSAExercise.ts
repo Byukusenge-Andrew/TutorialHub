@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 
 const testCaseSchema = new mongoose.Schema({
-  input: String,
-  expectedOutput: String,
+  input: mongoose.Schema.Types.Mixed,
+  expectedOutput: mongoose.Schema.Types.Mixed,
   isHidden: Boolean,
   explanation: String
 });
@@ -28,7 +28,8 @@ const dsaExerciseSchema = new mongoose.Schema({
   totalSubmissions: { type: Number, default: 0 },
   successfulSubmissions: { type: Number, default: 0 },
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  tags: [String]
 });
 
 export const DSAExercise = mongoose.model('DSAExercise', dsaExerciseSchema); 

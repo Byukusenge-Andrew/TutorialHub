@@ -20,6 +20,7 @@ export interface Tutorial {
   description: string;
   sections: Section[];
   category: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
   tags: string[];
   createdAt: string;
   updatedAt: string;

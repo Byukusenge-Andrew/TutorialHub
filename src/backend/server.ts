@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import tutorialRoutes from './routes/tutorials';
 import typingRoutes from './routes/typing';
 import dsaRoutes from './routes/dsa.routes';
+
 import progressRoutes from './routes/progress';
 import communityRoutes from './routes/community';
 import dashboardRoutes from './routes/dashboard';
@@ -71,7 +72,7 @@ const startServer = async () => {
       }
     }
   }
-  
+  console.log('Server started on port: '+process.env.PORT);
   console.error(`Could not find an available port after ${maxPortAttempts} attempts`);
   process.exit(1);
 };

@@ -86,42 +86,36 @@ export class DSAExerciseController {
         });
       }
 
-      // Run code against test cases
-      const results = await Promise.all(
-        exercise.testCases.map(async (testCase) => {
-          try {
-            const result = await CodeExecutionService.executeCode(code, language, [{ input: testCase.input, output: testCase.expectedOutput }]);
-            return {
-              success: result.output.trim() === testCase.expectedOutput.trim(),
-              executionTime: result.executionTime,
-              memoryUsed: result.memoryUsed,
-              testCase: testCase
-            };
-          } catch (error) {
-            return {
-              success: false,
-              error: error.message,
-              testCase: testCase
-            };
-          }
-        })
-      );
+      // Format test cases for execution
+      const formattedTestCases = exercise.testCases.map(testCase => ({
+        input: testCase.input,
+        output: testCase.expectedOutput
+      }));
+
+      // Execute code
+      const result = await CodeExecutionService.executeCode(code, language, formattedTestCases);
 
       // Update exercise stats
-      const passedAll = results.every(r => r.success);
       exercise.totalSubmissions += 1;
-      if (passedAll) exercise.successfulSubmissions += 1;
+      if (result.passed) {
+        exercise.successfulSubmissions += 1;
+      }
       exercise.successRate = (exercise.successfulSubmissions / exercise.totalSubmissions) * 100;
       await exercise.save();
 
       return res.json({
         status: 'success',
         data: {
-          success: passedAll,
-          results: results
+          success: result.passed,
+          executionTime: result.executionTime,
+          memoryUsed: result.memory,
+          passedTestCases: result.passed ? formattedTestCases.length : 0,
+          totalTestCases: formattedTestCases.length,
+          error: result.failedTestCase ? formattedTestCases[result.failedTestCase].output : null
         }
       });
     } catch (error) {
+      console.error('Error submitting solution:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Failed to process submission'
@@ -177,11 +171,11 @@ export class DSAExerciseController {
       }
 
       // Create a sandbox environment to run the code
-      const sandbox = {
+      const sandbox = [{
         input: JSON.parse(input),
         output: null,
-        error: null
-      };
+        expectedOutput: null
+      }];
 
       try {
         // Run the code in a safe environment
@@ -190,9 +184,9 @@ export class DSAExerciseController {
         return res.json({
           status: 'success',
           data: {
-            output: result.output,
+            passed: result.passed,
             executionTime: result.executionTime,
-            memoryUsed: result.memoryUsed
+            memory: result.memory
           }
         });
       } catch (error) {

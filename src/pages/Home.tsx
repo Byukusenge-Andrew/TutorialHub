@@ -1,133 +1,251 @@
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen,  Users, Star, Keyboard,  BrainCircuitIcon } from 'lucide-react';
+import { BookOpen, Keyboard, Users, Code2, ArrowRight, Star, Zap, Shield } from 'lucide-react';
 import { api } from '@/services/api';
 import { useEffect, useState } from 'react';
 import { Tutorial } from '../types';
+import { useAuth } from '@/providers/AuthProvider';
+
+const FEATURE_CARDS = [
+  {
+    to: '/typing',
+    icon: Keyboard,
+    color: 'from-blue-500 to-cyan-400',
+    bg: 'bg-blue-500/10',
+    iconColor: 'text-blue-600 dark:text-blue-400',
+    title: 'Practice Typing',
+    description: 'Improve your typing speed and accuracy with interactive exercises and real-time stats.',
+  },
+  {
+    to: '/tutorials',
+    icon: BookOpen,
+    color: 'from-purple-500 to-violet-400',
+    bg: 'bg-purple-500/10',
+    iconColor: 'text-purple-600 dark:text-purple-400',
+    title: 'Written Guides',
+    description: 'Detailed step-by-step tutorials covering every skill level from beginner to advanced.',
+  },
+  {
+    to: '/dsa',
+    icon: Code2,
+    color: 'from-emerald-500 to-teal-400',
+    bg: 'bg-emerald-500/10',
+    iconColor: 'text-emerald-600 dark:text-emerald-400',
+    title: 'DSA Challenges',
+    description: 'Test your problem-solving skills with curated data structures and algorithm exercises.',
+  },
+  {
+    to: '/community',
+    icon: Users,
+    color: 'from-orange-500 to-amber-400',
+    bg: 'bg-orange-500/10',
+    iconColor: 'text-orange-600 dark:text-orange-400',
+    title: 'Community',
+    description: 'Join thousands of learners — ask questions, share insights, and grow together.',
+  },
+];
+
+const STATS = [
+  { value: '10k+', label: 'Learners', icon: Users },
+  { value: '200+', label: 'Tutorials', icon: BookOpen },
+  { value: '50+', label: 'DSA Problems', icon: Code2 },
+  { value: '4.9★', label: 'Avg. Rating', icon: Star },
+];
 
 export function Home() {
   const [tutorials, setTutorials] = useState<Tutorial[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       try {
-        setIsLoading(true);
-        const tutorialsResponse = await api.tutorials.getAll();
-        if (tutorialsResponse?.data?.tutorials && Array.isArray(tutorialsResponse.data.tutorials)) {
-          setTutorials(tutorialsResponse.data.tutorials);
-        } else {
-          console.log('Unexpected API response format:', tutorialsResponse);
-          setTutorials([]); // Set empty array instead of throwing error
-        }
-      } catch (err) {
-        console.error('Failed to load data:', err);
-        setError('Failed to load tutorials. Please try again later.');
-        setTutorials([]); // Set empty array on error
+        const res = await api.tutorials.getAll();
+        setTutorials(res?.data?.tutorials || []);
+      } catch {
+        setTutorials([]);
       } finally {
         setIsLoading(false);
       }
     };
-
-    loadData();
+    load();
   }, []);
 
-  const FeaturedTutorialCard = ({ tutorial }: { tutorial: Tutorial }) => (
-    <div className="bg-white dark:bg-slate-300/35 hover:bg-slate-200 hover:dark:bg-gray-900/65  rounded-lg shadow-lg text-center">
-      <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold">{tutorial.title}</h3>
-        <div className="flex items-center">
-          <Star className="h-5 w-5 text-yellow-400 fill-current" />
-          <span className="ml-1">N/A</span>
-        </div>
-      </div>
-
-      <p className="text-gray-600 mb-4">{tutorial.description.slice(0,63) || 'No description available.'}</p>
-      <Link
-        to={`/tutorials/${tutorial._id}`}
-        className="text-blue-600 hover:text-blue-800 font-medium"
-      >
-        Start Learning →
-      </Link>
-    </div>
-    </div>
-  );
-
-  
-
   return (
-    <div className="space-y-16">
-      <section className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to TutorialHub</h1>
-        <p className="text-xl text-gray-600 mb-8">Learn and Grow with Our Community</p>
-        {/* <Link */}
-          {/* to="/tutorials" */}
-          {/* className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 inline-block" */}
-        {/* > */}
-          {/* Explore TutorialHub */}
-        {/* </Link> */}
-      </section>
-
-      <section className="grid md:grid-cols-3 gap-8 ">
-        <Link to={"/typing"} >
-        <div className="bg-slate-200/80  hover:bg-slate-300 hover:dark:bg-gray-900/20 p-6 rounded-lg shadow-lg text-center">
-          <Keyboard className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-          <h2 className="text-xl font-semibold mb-2">Practice Typing</h2>
-          <p className="text-gray-600">Improve your typing speed and accuracy with interactive exercises</p>
-        </div></Link>
-        <Link to={"/tutorials"}>
-        <div className="bg-slate-200/80  hover:bg-slate-200  hover:dark:bg-gray-900/20  p-6 rounded-lg shadow-lg text-center">
-          <BookOpen className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-          <h2 className="text-xl font-semibold mb-2">Written Guides</h2>
-          <p className="text-gray-600">Detailed step-by-step instructions for every skill level</p>
-        </div></Link>
-        <Link to={"/community"}>
-        <div className="bg-slate-200/80  hover:bg-slate-200 hover:dark:bg-gray-900/20  p-6 rounded-lg shadow-lg text-center">
-          <Users className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-          <h2 className="text-xl font-semibold mb-2">Community</h2>
-          <p className="text-gray-600">Join discussions and share knowledge with fellow learners</p>
-        </div></Link>
-        <Link to={"/community"}>
-        <div className="bg-slate-200/80  hover:bg-slate-200 hover:dark:bg-gray-900/20  p-6 rounded-lg shadow-lg text-center">
-          <BrainCircuitIcon className="h-12 w-12 mx-auto mb-4 text-blue-600" />
-          <h2 className="text-xl font-semibold mb-2">Challenges</h2>
-          <p className="text-gray-600">Test your knowledge and problem-solving skills with our coding challenges</p>
-        </div></Link>
-      </section>
-
-      <section className="-mx-4 px-4 py-12">
-        <div className=" mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-8">New Tutorials</h2>
-          {isLoading ? (
-            <p>Loading tutorials...</p>
-          ) : error ? (
-            <p className="text-red-600">{error}</p>
-          ) : tutorials.length === 0 ? (
-            <p>No tutorials available.</p>
-          ) : (
-            <>
-            <div className="flex flex-row gap-1 w-full box-border">
-              
-              {tutorials.slice(0, 3).map((tutorial, index) => (
-                <div key={tutorial._id || index} className='rounded-lg  p-2 text-center'>
-                <FeaturedTutorialCard tutorial={tutorial}
-                
-                />
-                </div>
-              ))}
-              
-            </div>
-            </>
-          )}
+    <div className="space-y-24 pb-16">
+      {/* ——— Hero ——— */}
+      <section className="relative overflow-hidden">
+        {/* Background gradient blob */}
+        <div
+          aria-hidden
+          className="absolute inset-0 -z-10 pointer-events-none
+            bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,hsl(var(--primary)/0.15),transparent)]"
+        />
+        <div className="container mx-auto px-4 pt-20 pb-10 text-center">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary text-xs font-semibold px-3 py-1.5 rounded-full mb-6 border border-primary/20">
+            <Zap className="h-3 w-3" />
+            Your all-in-one learning platform
+          </div>
+          <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-6 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+            Learn. Practice. <br className="hidden sm:block" />
+            <span className="text-primary">Level Up.</span>
+          </h1>
+          <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-8">
+            TutorialHub brings together structured tutorials, coding challenges, typing practice, and a vibrant community — all in one place.
+          </p>
+          <div className="flex flex-wrap gap-3 justify-center">
+            {!isAuthenticated ? (
+              <>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+                >
+                  Get Started Free
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/tutorials"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-accent text-accent-foreground rounded-xl font-semibold hover:bg-accent/80 transition-colors border border-border"
+                >
+                  Browse Tutorials
+                </Link>
+              </>
+            ) : (
+              <Link
+                to="/dashboard"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20"
+              >
+                Go to Dashboard
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
         </div>
-        {/* <Link to='/tutorials'> */}
-            {/* <Button className=''> */}
-              {/* More Tutorials */}
-            {/* </Button> */}
-            {/* </Link>  */}
+
+        {/* Stats strip */}
+        <div className="container mx-auto px-4 mt-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {STATS.map(({ value, label, icon: Icon }) => (
+              <div key={label} className="bg-card border border-border rounded-xl p-4 text-center">
+                <div className="text-2xl font-bold text-primary mb-1">{value}</div>
+                <div className="text-sm text-muted-foreground flex items-center justify-center gap-1">
+                  <Icon className="h-3.5 w-3.5" />
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
+
+      {/* ——— Features ——— */}
+      <section className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold mb-3">Everything you need to grow</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Four powerful modules, one seamless experience.
+          </p>
+        </div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {FEATURE_CARDS.map(({ to, icon: Icon, bg, iconColor, title, description }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group relative bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            >
+              <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-300`}>
+                <Icon className={`h-6 w-6 ${iconColor}`} />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">{title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+              <div className="mt-4 flex items-center gap-1 text-primary text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+                Explore <ArrowRight className="h-3.5 w-3.5 mt-0.5" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ——— Latest Tutorials ——— */}
+      <section className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl font-bold mb-1">Latest Tutorials</h2>
+            <p className="text-muted-foreground text-sm">Fresh content added regularly</p>
+          </div>
+          <Link
+            to="/tutorials"
+            className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+          >
+            View all <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {isLoading ? (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-44 rounded-2xl bg-muted animate-pulse" />
+            ))}
+          </div>
+        ) : tutorials.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <BookOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p>No tutorials available yet.</p>
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {tutorials.slice(0, 3).map((t) => (
+              <Link
+                key={t._id}
+                to={`/tutorials/${t._id}`}
+                className="group bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <span className="px-2.5 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-full">
+                    {t.category || 'Tutorial'}
+                  </span>
+                  <Star className="h-4 w-4 text-amber-400 fill-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <h3 className="font-semibold text-base mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+                  {t.title}
+                </h3>
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {t.description || 'No description available.'}
+                </p>
+                <div className="mt-4 flex items-center gap-1 text-primary text-sm font-medium">
+                  Start Learning <ArrowRight className="h-3.5 w-3.5" />
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-6 text-center sm:hidden">
+          <Link to="/tutorials" className="text-sm font-medium text-primary hover:underline inline-flex items-center gap-1">
+            View all tutorials <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
+      {/* ——— CTA Banner ——— */}
+      {!isAuthenticated && (
+        <section className="container mx-auto px-4">
+          <div className="relative overflow-hidden bg-primary rounded-2xl p-10 text-center text-primary-foreground">
+            <div aria-hidden className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,white,transparent)]" />
+            <Shield className="h-10 w-10 mx-auto mb-4 opacity-80" />
+            <h2 className="text-2xl font-bold mb-2">Ready to get started?</h2>
+            <p className="opacity-80 mb-6 max-w-sm mx-auto text-sm">
+              Create a free account and unlock all tutorials, challenges, and community features.
+            </p>
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary rounded-xl font-semibold hover:bg-white/90 transition-colors"
+            >
+              Join for free <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

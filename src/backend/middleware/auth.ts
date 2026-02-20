@@ -12,11 +12,16 @@ export interface AuthRequest extends Request {
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    console.log('Token:', token);
-    if (!token) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
       throw new AuthError('No token provided');
     }
+    
+    const token = authHeader.startsWith('Bearer ') 
+      ? authHeader.split(' ')[1] 
+      : authHeader;
+      
+    console.log('Token:', token);
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
     const user = await User.findById((decoded as any).id);

@@ -47,25 +47,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Set up interceptor when provider is initialized
   setupInterceptor();
 
-  useEffect(() => {
-    const validateToken = async () => {
-      if (token) {
-        try {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/validate`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          setUser(response.data.data.user);
-        } catch (error) {
-          console.error('Token validation failed:', error);
-          localStorage.removeItem('token');
-          setToken(null);
-        }
-      }
+  const validateToken = async () => {
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) {
       setLoading(false);
-    };
+      return;
+    }
 
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/validate`, {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      });
+      setUser(response.data.data.user);
+      setToken(storedToken);
+    } catch (error) {
+      localStorage.removeItem('token');
+      setUser(null);
+      setToken(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     validateToken();
-  }, [token]);
+  }, []);
 
   const login = async (email: string, password: string) => {
     const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, { email, password });

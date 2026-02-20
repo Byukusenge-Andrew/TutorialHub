@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { Plus, Save, Trash2, Play } from 'lucide-react';
-import { useDSAStore } from '../../store/dsa-store';
+import { Plus, Play, Trash2 } from 'lucide-react';
 import { TestCase } from '../../types';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/providers/AuthProvider';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 
 // Add these type definitions
 type InputFormat = 'array' | 'number' | 'string' | 'matrix';
+type InputValue = number | string | number[] | number[][];
 
 interface ExerciseTemplate {
   inputFormat: InputFormat;
@@ -75,7 +75,7 @@ const problemTemplates: Record<InputFormat, ExerciseTemplate> = {
 };
 
 // Update parse input function to handle different formats
-function parseInput(input: string, format: InputFormat): any {
+function parseInput(input: string, format: InputFormat): InputValue {
   switch (format) {
     case 'array':
       return input.split(',')
@@ -97,69 +97,58 @@ function parseInput(input: string, format: InputFormat): any {
   }
 }
 
-function runSolutionInSandbox(solutionCode: string, input: any, format: InputFormat): any {
-  try {
-    // Create a function from the solution code
-    const solutionFunc = new Function('return ' + solutionCode)();
-    
-    // Validate function exists
-    if (typeof solutionFunc !== 'function') {
-      throw new Error('Code must define a solution function');
-    }
+function runSolutionInSandbox(solutionCode: string, input: InputValue, format: InputFormat): unknown {
+  // Create a function from the solution code
+  const solutionFunc = new Function('return ' + solutionCode)();
 
-    // Run solution with timeout
-    const startTime = Date.now();
-    const result = solutionFunc(input);
-    
-    // Check time limit
-    if (Date.now() - startTime > 2000) {
-      throw new Error('Time limit exceeded (2 seconds)');
-    }
-
-    // Validate result based on format
-    switch (format) {
-      case 'array':
-        if (!Array.isArray(result)) {
-          throw new Error('Solution must return an array');
-        }
-        break;
-      case 'number':
-        if (typeof result !== 'number') {
-          throw new Error('Solution must return a number');
-        }
-        break;
-      case 'string':
-        if (typeof result !== 'string') {
-          throw new Error('Solution must return a string');
-        }
-        break;
-      case 'matrix':
-        if (!Array.isArray(result) || !result.every(Array.isArray)) {
-          throw new Error('Solution must return a matrix (array of arrays)');
-        }
-        break;
-    }
-
-    if (result === undefined || result === null) {
-      throw new Error('Solution must return a value');
-    }
-
-    return result;
-  } catch (error) {
-    throw error;
+  // Validate function exists
+  if (typeof solutionFunc !== 'function') {
+    throw new Error('Code must define a solution function');
   }
-}
 
-// Add this helper function for array comparison
-function compareArrays(arr1: number[], arr2: number[]): boolean {
-  if (arr1.length !== arr2.length) return false;
-  return arr1.every((val, idx) => val === arr2[idx]);
+  // Run solution with timeout
+  const startTime = Date.now();
+  const result = solutionFunc(input);
+
+  // Check time limit
+  if (Date.now() - startTime > 2000) {
+    throw new Error('Time limit exceeded (2 seconds)');
+  }
+
+  // Validate result based on format
+  switch (format) {
+    case 'array':
+      if (!Array.isArray(result)) {
+        throw new Error('Solution must return an array');
+      }
+      break;
+    case 'number':
+      if (typeof result !== 'number') {
+        throw new Error('Solution must return a number');
+      }
+      break;
+    case 'string':
+      if (typeof result !== 'string') {
+        throw new Error('Solution must return a string');
+      }
+      break;
+    case 'matrix':
+      if (!Array.isArray(result) || !result.every(Array.isArray)) {
+        throw new Error('Solution must return a matrix (array of arrays)');
+      }
+      break;
+  }
+
+  if (result === undefined || result === null) {
+    throw new Error('Solution must return a value');
+  }
+
+  return result;
 }
 
 export function CreateDSAChallenge() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { addChallenge } = useDSAStore();
   const [isLoading, setIsLoading] = useState(true);
   const [exercise, setExercise] = useState({
     title: '',
@@ -192,7 +181,7 @@ export function CreateDSAChallenge() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Check if solution is empty or just the template
     if (exercise.solution === problemTemplates[exercise.inputFormat].solutionCode) {
       toast.error('Please provide a solution before creating the challenge');
@@ -215,7 +204,7 @@ export function CreateDSAChallenge() {
       };
 
       const response = await api.dsa.createChallenge(challengeData);
-      
+
       if (response.status === 'success') {
         toast.success('Challenge created successfully!');
         navigate('/dsa');
@@ -302,8 +291,8 @@ export function CreateDSAChallenge() {
   const updateTestCase = (index: number, field: keyof TestCase, value: string | boolean) => {
     setExercise(prev => ({
       ...prev,
-      testCases: prev.testCases.map((tc, i) => 
-        i === index 
+      testCases: prev.testCases.map((tc, i) =>
+        i === index
           ? { ...tc, [field]: value }
           : tc
       )
@@ -364,9 +353,14 @@ export function CreateDSAChallenge() {
                 value={exercise.difficulty}
                 onValueChange={value => setExercise({ ...exercise, difficulty: value })}
               >
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select difficulty" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="easy">Easy</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="hard">Hard</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -395,10 +389,15 @@ export function CreateDSAChallenge() {
                   }));
                 }}
               >
-                <option value="array">Array</option>
-                <option value="number">Number</option>
-                <option value="string">String</option>
-                <option value="matrix">Matrix</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select format" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="array">Array</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="string">String</SelectItem>
+                  <SelectItem value="matrix">Matrix</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -456,8 +455,8 @@ export function CreateDSAChallenge() {
                         {testResults[index].success ? "Passed" : "Failed"}
                       </Badge>
                     )}
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => removeTestCase(index)}
                     >
@@ -507,7 +506,7 @@ export function CreateDSAChallenge() {
               <Plus className="w-4 h-4 mr-2" />
               Add Test Case
             </Button>
-            <Button 
+            <Button
               onClick={validateSolution}
               disabled={isValidating || exercise.testCases.length === 0}
               className="w-32"
