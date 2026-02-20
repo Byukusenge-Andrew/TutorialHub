@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { useAuth } from '@/providers/AuthProvider';
-import { Loader2, LogIn, Eye, EyeOff, BookOpen } from 'lucide-react';
+import { Loader2, LogIn, Eye, EyeOff } from 'lucide-react';
 import { VerificationRequired } from '@/components/VerificationRequired';
 
 export const Login = () => {
@@ -27,11 +28,15 @@ export const Login = () => {
     setLoading(true);
     try {
       await login(email, password);
-    } catch (err: any) {
-      if (err.response?.data?.needsVerification) {
-        setNeedsVerification(true);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.data?.needsVerification) {
+          setNeedsVerification(true);
+        } else {
+          setError(error.response?.data?.message || 'Invalid email or password.');
+        }
       } else {
-        setError(err.response?.data?.message || 'Invalid email or password.');
+        setError('An unexpected error occurred.');
       }
       setLoading(false);
     }
