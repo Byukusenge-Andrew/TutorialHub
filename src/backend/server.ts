@@ -38,9 +38,10 @@ app.use('/api/community', communityRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
-app.use((err: { statusCode?: number; status?: string; message?: string }, req: express.Request, res: express.Response) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: { statusCode?: number; status?: string; message?: string }, req: express.Request, res: express.Response, next: express.NextFunction) => {
   const statusCode = err.statusCode || 500;
-  console.error('Error:', err.message || err);
+  console.error('Express Error Handler caught:', err);
   res.status(statusCode).json({
     status: err.status || 'error',
     message: err.message || 'Something went wrong!'
