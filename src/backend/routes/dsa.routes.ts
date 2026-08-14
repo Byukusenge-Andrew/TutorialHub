@@ -8,7 +8,7 @@ const router = Router();
 
 router.get('/exercises', protect, DSAExerciseController.getExercises);
 router.get('/exercises/:id', DSAExerciseController.getExercise);
-router.post('/exercises/bulk-import', protect, BulkImportController.importDSAExercises);
+router.post('/exercises/bulk-import', protect, BulkImportController.importDSA);
 router.post('/exercises/create', protect, DSAExerciseController.createExercise);
 router.post('/exercises/:id/submit', protect, validateSubmission, DSAExerciseController.submitSolution);
 router.get('/user-stats', protect, DSAExerciseController.getUserStats);

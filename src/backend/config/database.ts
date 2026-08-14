@@ -2,6 +2,9 @@ import mongoose from 'mongoose';
 import logger from '../utils/logger';
 
 const connectDB = async (): Promise<void> => {
+  if (mongoose.connection.readyState >= 1) {
+    return;
+  }
   try {
     if (!process.env.MONGODB_URI) {
       // Use a fallback connection string for development
@@ -19,7 +22,6 @@ const connectDB = async (): Promise<void> => {
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     logger.error('Error connecting to MongoDB:', error);
-    // Don't exit process here, let the application handle the error
     throw error;
   }
 };

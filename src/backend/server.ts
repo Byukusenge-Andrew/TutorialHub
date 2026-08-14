@@ -17,10 +17,23 @@ dotenv.config();
 
 const app = express();
 
-// Connect to MongoDB
+// Connect to MongoDB asynchronously
 connectDB().catch(err => {
-  console.error('Failed to connect to MongoDB', err);
-  process.exit(1);
+  console.error('Failed to connect to MongoDB on startup:', err);
+});
+
+// Middleware to ensure DB connection before handling requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('Database connection error in request handler:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to connect to database'
+    });
+  }
 });
 
 // Middleware
@@ -47,7 +60,8 @@ app.use((err: { statusCode?: number; status?: string; message?: string }, req: e
     message: err.message || 'Something went wrong!'
   });
 });
-//return message if server directely requested in browser
+
+// Return message if server directly requested in browser
 app.get('/', (req, res) => {
   res.send('Server is running');
 });
@@ -73,13 +87,13 @@ const startServer = async () => {
       }
     }
   }
-  console.log('Server started on port: '+process.env.PORT);
+  console.log('Server started on port: ' + process.env.PORT);
   console.error(`Could not find an available port after ${maxPortAttempts} attempts`);
   process.exit(1);
 };
 
-// Start server only if not in test environment
-if (process.env.NODE_ENV !== 'test') {
+// Start standalone HTTP server only if not in test environment and not on Vercel Serverless
+if (process.env.NODE_ENV !== 'test' && !process.env.VERCEL) {
   startServer();
 }
 
