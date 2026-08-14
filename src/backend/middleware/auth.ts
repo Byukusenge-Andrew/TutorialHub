@@ -4,10 +4,8 @@ import { AuthError } from '../utils/errors';
 import User from '../models/User';
 
 export interface AuthRequest extends Request {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   user?: any;
-  body: any;
-  params: any;
-  headers: any;
 }
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -21,6 +19,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       ? authHeader.split(' ')[1] 
       : authHeader;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let decoded: any;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET as string);

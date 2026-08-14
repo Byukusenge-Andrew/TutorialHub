@@ -36,6 +36,7 @@ export function TypingHistory({ data }: TypingHistoryProps) {
   }
 
   // Process history data to ensure score exists
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const processedHistory = data.history.map((item: any) => ({
     ...item,
     // Calculate score if it doesn't exist

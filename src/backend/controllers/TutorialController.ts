@@ -11,7 +11,7 @@ export class TutorialController {
       // Clean up sections data before saving
       const tutorialData = {
         ...req.body,
-        sections: req.body.sections.map((section: any, index: number) => ({
+        sections: req.body.sections.map((section: { title: string; content: string; order?: number }, index: number) => ({
           title: section.title,
           content: section.content,
           order: section.order || index
@@ -36,12 +36,16 @@ export class TutorialController {
   });
 
   getTutorials = catchAsync(async (req: Request, res: Response) => {
-    const tutorials = await TutorialService.getTutorials(req.query);
-    console.log(tutorials)
+    const { tutorials, total, page, totalPages } = await TutorialService.getTutorials(req.query);
     res.status(200).json({
       status: 'success',
       results: tutorials.length,
-      data: { tutorials }
+      data: {
+        tutorials,
+        total,
+        page,
+        totalPages
+      }
     });
   });
 

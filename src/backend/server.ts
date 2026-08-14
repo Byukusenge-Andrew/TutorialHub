@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import adminRoutes from './routes/admin';
 import authRoutes from './routes/auth';
@@ -39,7 +38,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: { statusCode?: number; status?: string; message?: string }, req: express.Request, res: express.Response) => {
   const statusCode = err.statusCode || 500;
   console.error('Error:', err.message || err);
   res.status(statusCode).json({
@@ -63,8 +62,8 @@ const startServer = async () => {
         console.log(`Server running on port ${address.port}`);
       });
       return server;
-    } catch (error: any) {
-      if (error.code === 'EADDRINUSE') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'EADDRINUSE') {
         console.log(`Port ${port} is busy, trying ${port + 1}`);
         port++;
       } else {

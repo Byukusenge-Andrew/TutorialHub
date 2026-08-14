@@ -35,19 +35,10 @@ export function CreateTutorial() {
   });
 
   const [editorModes, setEditorModes] = useState<Record<string, 'markdown' | 'code'>>({});
-  const [codeLanguages, setCodeLanguages] = useState<Record<string, string>>({});
-
   const toggleEditorMode = (sectionId: string) => {
     setEditorModes(prev => ({
       ...prev,
       [sectionId]: prev[sectionId] === 'code' ? 'markdown' : 'code'
-    }));
-  };
-
-  const updateCodeLanguage = (sectionId: string, language: string) => {
-    setCodeLanguages(prev => ({
-      ...prev,
-      [sectionId]: language
     }));
   };
 
@@ -76,7 +67,7 @@ export function CreateTutorial() {
         ...formData,
         sections: sectionsWithIds,
         tags: formData.tags.split(',').map(tag => tag.trim()),
-        authorId: user.id
+        authorId: user._id || (user as { id?: string }).id || ''
       });
 
       navigate(`/tutorials/${response._id}`);
@@ -175,7 +166,7 @@ export function CreateTutorial() {
                 <CodeEditor
                   value={section.content}
                   onChange={(value) => updateSection(index, 'content', value || '', parentIndex)}
-                  language={codeLanguages[section._id] || 'javascript'}
+                  language="javascript"
                 
                 />
               ) : (
@@ -197,7 +188,6 @@ export function CreateTutorial() {
                     <Button
                       type="button"
                       onClick={() => {
-                        const cursorPosition = section.content.length;
                         updateSection(
                           index,
                           'content',
@@ -215,7 +205,6 @@ export function CreateTutorial() {
                     <Button
                       type="button"
                       onClick={() => {
-                        const cursorPosition = section.content.length;
                         updateSection(
                           index,
                           'content',

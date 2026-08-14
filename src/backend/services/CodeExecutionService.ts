@@ -8,14 +8,14 @@ interface ExecutionResult {
   memory: number;
   error?: string;
   failedTestCase?: number;
-  output?: any;
+  output?: unknown;
 }
 
 export class CodeExecutionService {
   private static readonly TIMEOUT = 2000; // 2 seconds
   private static readonly MEMORY_LIMIT = 128; // 128 MB
 
-  static async executeJavaScript(code: string, testCases: any[]): Promise<ExecutionResult> {
+  static async executeJavaScript(code: string, testCases: TestCase[]): Promise<ExecutionResult> {
     const vm = new VM({
       timeout: this.TIMEOUT,
       sandbox: {},
@@ -90,7 +90,7 @@ export class CodeExecutionService {
       
       switch (language) {
         case 'javascript':
-        case 'typescript':
+        case 'typescript': {
           const result = await this.executeJavaScript(code, testCases);
           const executionTime = Date.now() - startTime;
           return {
@@ -99,6 +99,7 @@ export class CodeExecutionService {
             memory: result.memory,
             failedTestCase: result.failedTestCase
           };
+        }
         // Add support for other languages here
         default:
           throw new Error(`Unsupported language: ${language}`);

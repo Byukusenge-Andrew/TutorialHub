@@ -12,11 +12,61 @@ export class TutorialService {
     return tutorial;
   }
 
-  async getTutorials(query: any = {}): Promise<ITutorial[]> {
-    const tutorials = await Tutorial.find(query)
+  async getTutorials(query: Record<string, unknown> = {}): Promise<{
+    tutorials: ITutorial[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const { page = 1, limit, search, category, difficulty } = query as {
+      page?: string | number;
+      limit?: string | number;
+      search?: string;
+      category?: string;
+      difficulty?: string;
+    };
+
+    const filter: Record<string, unknown> = {};
+
+    if (category && category !== 'all') {
+      filter.category = { $regex: new RegExp(`^${category}$`, 'i') };
+    }
+
+    if (difficulty && difficulty !== 'all') {
+      filter.difficulty = difficulty.toLowerCase();
+    }
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { tags: { $in: [new RegExp(search, 'i')] } }
+      ];
+    }
+
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = limit ? parseInt(limit as string, 10) : undefined;
+    const skip = limitNum ? (pageNum - 1) * limitNum : 0;
+
+    const total = await Tutorial.countDocuments(filter);
+
+    let queryExec = Tutorial.find(filter)
       .populate('authorId', 'name email')
       .sort('-createdAt');
-    return tutorials;
+
+    if (limitNum) {
+      queryExec = queryExec.skip(skip).limit(limitNum);
+    }
+
+    const tutorials = await queryExec;
+    const totalPages = limitNum ? Math.ceil(total / limitNum) || 1 : 1;
+
+    return {
+      tutorials,
+      total,
+      page: pageNum,
+      totalPages
+    };
   }
 
   async getTutorialById(id: string): Promise<ITutorial> {

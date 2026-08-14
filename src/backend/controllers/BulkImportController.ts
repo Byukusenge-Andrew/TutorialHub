@@ -20,7 +20,7 @@ class BulkImportController {
       });
     }
 
-    const userId = new Types.ObjectId((req.user._id || req.user.id).toString());
+    const userId = new Types.ObjectId((req.user?._id || req.user?.id || '').toString());
     const validTutorials = [];
     const errors: string[] = [];
 
@@ -46,7 +46,7 @@ class BulkImportController {
         const content = item.content || item.description;
         sections = [{ title: 'Overview', content, order: 1 }];
       } else {
-        sections = sections.map((sec: any, idx: number) => ({
+        sections = sections.map((sec: Record<string, unknown>, idx: number) => ({
           title: sec.title || `Section ${idx + 1}`,
           content: sec.content || '',
           order: typeof sec.order === 'number' ? sec.order : idx + 1
@@ -58,6 +58,9 @@ class BulkImportController {
         description: item.description.trim(),
         category,
         tags,
+        difficulty: (['beginner', 'intermediate', 'advanced'].includes(item.difficulty?.toLowerCase())
+          ? item.difficulty.toLowerCase()
+          : 'beginner') as 'beginner' | 'intermediate' | 'advanced',
         sections,
         authorId: userId
       });
@@ -85,37 +88,40 @@ class BulkImportController {
   /**
    * Bulk import DSA exercises/challenges
    */
-  importDSAExercises = catchAsync(async (req: AuthRequest, res: Response) => {
+  importDSA = catchAsync(async (req: AuthRequest, res: Response) => {
     const { items } = req.body;
+    const userId = req.user?._id || req.user?.id || '';
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         status: 'error',
-        message: 'Invalid payload: "items" must be a non-empty array'
+        message: 'Items array is required'
       });
     }
 
-    const userId = new Types.ObjectId((req.user._id || req.user.id).toString());
-    const validExercises = [];
-    const validChallenges = [];
+    const validExercises: Record<string, unknown>[] = [];
+    const validChallenges: Record<string, unknown>[] = [];
     const errors: string[] = [];
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index];
+
       if (!item.title || typeof item.title !== 'string') {
-        errors.push(`Item ${i + 1}: Missing or invalid "title"`);
-        continue;
-      }
-      if (!item.description || typeof item.description !== 'string') {
-        errors.push(`Item ${i + 1}: Missing or invalid "description"`);
+        errors.push(`Item #${index + 1}: Missing or invalid title`);
         continue;
       }
 
-      const difficulty = ['easy', 'medium', 'hard'].includes(String(item.difficulty).toLowerCase())
-        ? String(item.difficulty).toLowerCase()
+      if (!item.description || typeof item.description !== 'string') {
+        errors.push(`Item #${index + 1}: Missing or invalid description`);
+        continue;
+      }
+
+      const difficulty = ['easy', 'medium', 'hard'].includes(item.difficulty?.toLowerCase())
+        ? item.difficulty.toLowerCase()
         : 'easy';
 
       const category = item.category || 'General';
+
       const starterCode = typeof item.starterCode === 'string'
         ? item.starterCode
         : (item.starterCode?.javascript || 'function solution() {\n  // Write solution\n}');
@@ -125,7 +131,7 @@ class BulkImportController {
       if (!Array.isArray(testCases)) {
         testCases = [];
       } else {
-        testCases = testCases.map((tc: any) => ({
+        testCases = testCases.map((tc: Record<string, unknown>) => ({
           input: tc.input,
           expectedOutput: tc.expectedOutput ?? tc.output,
           output: tc.output ?? tc.expectedOutput,
@@ -175,7 +181,7 @@ class BulkImportController {
     }
 
     const insertedExercises = await DSAExercise.insertMany(validExercises);
-    const insertedChallenges = await DSAChallenge.insertMany(validChallenges);
+    await DSAChallenge.insertMany(validChallenges);
 
     res.status(201).json({
       status: 'success',

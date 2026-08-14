@@ -2,7 +2,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
-import { HTMLAttributes, CSSProperties } from 'react';
+import { HTMLAttributes } from 'react';
 
 interface CodeProps extends HTMLAttributes<HTMLElement> {
   inline?: boolean;
@@ -21,7 +21,8 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
           const match = /language-(\w+)/.exec(className || '');
           return !inline && match ? (
             <SyntaxHighlighter
-              style={oneDark}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              style={oneDark as any}
               language={match[1]}
               PreTag="div"
               {...props}

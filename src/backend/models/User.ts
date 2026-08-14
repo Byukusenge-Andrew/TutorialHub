@@ -1,5 +1,4 @@
 import { Document, Schema, model, models } from 'mongoose';
-import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 
 export interface IUser extends Document {

@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { Types } from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { catchAsync } from '../utils/catchAsync';
@@ -100,9 +100,9 @@ class DashboardController {
           ? (dsaStats[0].solvedChallenges / dsaStats[0].totalAttempts) * 100
           : 0,
         byDifficulty: {
-          easy: dsaStats[0]?.byDifficulty.filter((d: { difficulty: string; passed: any; }) => d.difficulty === 'easy' && d.passed).length || 0,
-          medium: dsaStats[0]?.byDifficulty.filter((d: { difficulty: string; passed: any; }) => d.difficulty === 'medium' && d.passed).length || 0,
-          hard: dsaStats[0]?.byDifficulty.filter((d: { difficulty: string; passed: any; }) => d.difficulty === 'hard' && d.passed).length || 0
+          easy: dsaStats[0]?.byDifficulty.filter((d: { difficulty: string; passed: boolean }) => d.difficulty === 'easy' && d.passed).length || 0,
+          medium: dsaStats[0]?.byDifficulty.filter((d: { difficulty: string; passed: boolean }) => d.difficulty === 'medium' && d.passed).length || 0,
+          hard: dsaStats[0]?.byDifficulty.filter((d: { difficulty: string; passed: boolean }) => d.difficulty === 'hard' && d.passed).length || 0
         }
       },
       tutorials: {

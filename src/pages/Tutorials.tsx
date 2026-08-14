@@ -21,7 +21,10 @@ interface Tutorial {
 export function Tutorials() {
   const { data: tutorials, isLoading, error } = useQuery<Tutorial[]>({
     queryKey: ['tutorials'],
-    queryFn: () => api.tutorials.getAll()
+    queryFn: async () => {
+      const res = await api.tutorials.getAll();
+      return res?.data?.tutorials || [];
+    }
   });
 
   if (isLoading) {

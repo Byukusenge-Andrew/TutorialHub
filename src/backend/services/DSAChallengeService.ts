@@ -42,12 +42,27 @@ export class DSAChallengeService {
       }
     });
 
-    // Update challenge stats
-    challenge.submissions += 1;
-    if (passed === challenge.testCases.length) {
-      challenge.successfulSubmissions += 1;
+    const isPassed = passed === challenge.testCases.length;
+
+    // Update challenge stats and push submission
+    challenge.totalSubmissions = (challenge.totalSubmissions || 0) + 1;
+    if (isPassed) {
+      challenge.successfulSubmissions = (challenge.successfulSubmissions || 0) + 1;
     }
-    challenge.successRate = (challenge.successfulSubmissions / challenge.submissions) * 100;
+    challenge.successRate = (challenge.successfulSubmissions / challenge.totalSubmissions) * 100;
+    
+    if (userId) {
+      challenge.submissions.push({
+        userId: userId as unknown as import('mongoose').Schema.Types.ObjectId,
+        code: solution,
+        language: 'javascript',
+        passed: isPassed,
+        executionTime: 0,
+        memory: 0,
+        createdAt: new Date()
+      });
+    }
+
     await challenge.save();
 
     return {

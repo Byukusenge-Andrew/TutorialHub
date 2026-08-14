@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   BookOpen, Code2, Keyboard, Menu, Users, X,
-  LayoutDashboard, ShieldCheck, ChevronDown, LogOut, User, Moon, Sun
+  LayoutDashboard, ShieldCheck, ChevronDown, LogOut, User
 } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { ThemeToggle } from './ThemeToggle';

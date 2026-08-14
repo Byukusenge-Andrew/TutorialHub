@@ -3,7 +3,7 @@ import { Tutorial, TutorialProgress, Section } from '@/types';
 import axios from 'axios';
 import { Post } from '@/types/community';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Add a debug log to verify the URL
 console.log('API URL:', API_URL);
@@ -91,7 +91,7 @@ export const api = {
       } catch (error) {
         console.error('Error fetching tutorials:', error);
         // Return empty data to prevent UI errors
-        return { status: 'error', data: { tutorials: [] } };
+        return { status: 'error', data: { tutorials: [], total: 0, page: 1, totalPages: 1 } };
       }
     },
 
@@ -124,7 +124,8 @@ export const api = {
         } as HeadersInit,
         body: JSON.stringify(tutorialData),
       });
-      return handleResponse<Tutorial>(response);
+      const res = await handleResponse<{ status: string; data?: { tutorial: Tutorial }; _id?: string }>(response);
+      return res.data?.tutorial || (res as unknown as Tutorial);
     },
 
     getById: async (id: string) => {
@@ -453,6 +454,13 @@ export const api = {
   },
 
   dashboard: {
+    getStats: async () => {
+      const response = await fetch(`${API_URL}/dashboard/stats`, {
+        headers: getAuthHeaders() as HeadersInit
+      });
+      return handleResponse(response);
+    },
+
     getStudentStats: async () => {
       try {
         const response = await fetch(`${API_URL}/dashboard/student-stats`, {
@@ -646,38 +654,5 @@ export const api = {
       });
       return handleResponse(response);
     },
-  },
-
-  dashboard: {
-    getStats: async () => {
-      const response = await fetch(`${API_URL}/dashboard/stats`, {
-        headers: getAuthHeaders()
-      });
-      return handleResponse(response);
-    },
-
-    getStudentStats: async (): Promise<unknown> => {
-      try {
-        const response = await fetch(`${API_URL}/dashboard/student-stats`, {
-          headers: getAuthHeaders()
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await handleResponse<{ status: string; data: unknown }>(response);
-        return data.data;
-      } catch (error) {
-        console.error('Error fetching student stats:', error);
-        // Return default data to prevent dashboard errors
-        return {
-          tutorials: { completed: 0, inProgress: 0 },
-          typing: { avgWpm: 0, avgAccuracy: 0, bestWpm: 0, totalTests: 0 },
-          dsa: { solved: 0, totalAttempted: 0, successRate: 0 },
-          community: { posts: 0, comments: 0 }
-        };
-      }
-    }
   },
 };

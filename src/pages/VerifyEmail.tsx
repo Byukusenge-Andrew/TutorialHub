@@ -13,22 +13,16 @@ export const VerifyEmail = () => {
     const verifyEmail = async () => {
       try {
         setLoading(true);
-        // const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/verify-email/${token}`);
-        if (import.meta.env.VITE_API_URL === 'http://localhost:3000/api') {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/verify-email/${token}`);
-          if (response.data.status === 'success') {
-            setVerified(true);
-          }
-        } else if (import.meta.env.VITE_API_URL === 'https://tutorial-hub-01.vercel.app/api') {
-          const response = await axios.get(`${import.meta.env.VITE_API_PROD_URL}/auth/verify-email/${token}`);
-          if (response.data.status === 'success') {
-            setVerified(true);
-          }
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+        const response = await axios.get(`${apiUrl}/auth/verify-email/${token}`);
+        if (response.data.status === 'success') {
+          setVerified(true);
         }
         
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Verification error:', error);
-        setError(error.response?.data?.message || 'Failed to verify email. The link may be invalid or expired.');
+        const msg = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+        setError(msg || 'Failed to verify email. The link may be invalid or expired.');
       } finally {
         setLoading(false);
       }

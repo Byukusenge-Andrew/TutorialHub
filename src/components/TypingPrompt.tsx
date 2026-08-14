@@ -23,7 +23,6 @@ export function TypingPrompt({
   incorrectChars,
   onInput,
   isFinished,
-  onReset,
   onComplete,
   onProgress
 }: TypingPromptProps) {
@@ -33,7 +32,7 @@ export function TypingPrompt({
   const [startTime, setStartTime] = useState<number>(Date.now());
   
   const saveMutation = useMutation({
-    mutationFn: (stats: TypingStats) => api.typing.saveResult(stats),
+    mutationFn: (stats: TypingStats) => api.typing.saveRecord(stats),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['typing-history'] });
     }

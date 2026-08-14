@@ -42,6 +42,8 @@ const setupInterceptor = () => {
   }
 };
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
@@ -69,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_API_URL}/auth/validate`, {
+          const response = await axios.get(`${API_URL}/auth/validate`, {
             headers: { Authorization: `Bearer ${storedToken}` },
             timeout: 5000 // Add timeout to prevent long waiting
           });
@@ -78,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(userData);
           setToken(storedToken);
         } catch (error) {
-          console.error('Token validation failed:', error);
+          console.error('Token validation failed:', axios.isAxiosError(error) ? error.response?.data?.message || error.message : error);
           // Don't log out user immediately on network errors
           if (axios.isAxiosError(error) && error.code === 'ERR_NETWORK') {
             console.warn('Network error during validation - keeping user session');
@@ -111,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, { email, password });
+      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
       const { user: userData, token: newToken } = response.data.data;
       
       setUser(userData);
@@ -130,7 +132,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const register = async (name: string, email: string, password: string) => {
-    const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, { name, email, password });
+    const response = await axios.post(`${API_URL}/auth/register`, { name, email, password });
     const { user: userData, token: newToken } = response.data.data;
     
     // Update state

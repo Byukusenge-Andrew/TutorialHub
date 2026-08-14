@@ -20,9 +20,10 @@ export const ForgotPassword = () => {
       if (response.data.status === 'success') {
         setSuccess(true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Password reset error:', err);
-      setError(err.response?.data?.message || 'Failed to send password reset email. Please try again later.');
+      const msg = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      setError(msg || 'Failed to send password reset email. Please try again later.');
     } finally {
       setLoading(false);
     }

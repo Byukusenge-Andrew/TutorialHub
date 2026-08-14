@@ -1,14 +1,12 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
-import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { VerifyEmail } from './pages/VerifyEmail';
 import { ResendVerification } from './pages/ResendVerification';
-import { Tutorials } from './pages/Tutorials';
 import { DSAExercises } from './pages/DSAExercises';
 import { Home as HomePage } from './pages/Home';
 import { TutorialList } from './pages/TutorialList';
@@ -19,7 +17,7 @@ import { UserDashboard } from './pages/UserDashboard';
 import { DSAChallenge } from './pages/DSAChallenge';
 import { CreateDSAChallenge } from './pages/admin/CreateDSAChallenge';
 import { TypingPage } from './pages/TypingPage';
-import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+import { AuthProvider } from '@/providers/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { CreateTutorial } from './pages/admin/CreateTutorial';
 import { AdminTutorials } from './pages/admin/AdminTutorials';
@@ -27,14 +25,11 @@ import { AdminUsers } from './pages/admin/AdminUsers';
 import { AdminAnalytics } from './pages/admin/AdminAnalytics';
 import { About } from './pages/static/About';
 import { Community } from './pages/Community';
-import { CreatePost } from './pages/CreatePost';
-import { PostDetail } from './pages/PostDetail';
 import { CommunityPage } from '@/pages/CommunityPage';
 import { CreatePostPage } from '@/pages/CreatePostPage';
 import { PostDetailPage } from '@/pages/PostDetailPage';
 import { RegistrationSuccess } from './pages/RegistrationSuccess';
 import { AuthWrapper } from '@/components/AuthWrapper';
-import EditUser from './components/EditUser';
 
 function App() {
   
@@ -97,17 +92,17 @@ function App() {
             <Route path="dsa/:id" element={<DSAChallenge />} />
             <Route path="dsa" element={<DSAExercises />} />
             <Route path="tutorials" element={<TutorialList />} />
+            <Route path="tutorials/create" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <CreateTutorial />
+              </ProtectedRoute>
+            } />
             <Route path="tutorials/:id" element={<TutorialDetail />} />
             <Route path="profile" element={
               <ProtectedRoute>
                 <Profile />
               </ProtectedRoute>
             } />
-            <Route path="tutorials/create" element={
-                     <ProtectedRoute allowedRoles={['admin']}>
-              <CreateTutorial />
-              </ProtectedRoute>
-              } />
             <Route path="/community" element={
               <ProtectedRoute>
                 <CommunityPage />

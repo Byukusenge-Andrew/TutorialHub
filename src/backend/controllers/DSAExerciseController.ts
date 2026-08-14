@@ -6,7 +6,7 @@ export class DSAExerciseController {
   static async getExercises(req: Request, res: Response) {
     try {
       const { difficulty, category, tag } = req.query;
-      let query: any = {};
+      const query: Record<string, unknown> = {};
 
       if (difficulty) query.difficulty = difficulty;
       if (category) query.category = category;
@@ -39,7 +39,8 @@ export class DSAExerciseController {
       }
 
       // Don't send solution to client
-      const { solution, ...exerciseData } = exercise.toObject();
+      const exerciseData = exercise.toObject();
+      delete (exerciseData as { solution?: unknown }).solution;
 
       return res.json({
         status: 'success',

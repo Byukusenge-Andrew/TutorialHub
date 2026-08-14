@@ -5,7 +5,7 @@ import { protect } from '../middleware/auth';
 
 const router = Router();
 
-router.use(protect as any); // Type assertion to fix Express middleware type issue
+router.use((req, res, next) => protect(req as unknown as import('../middleware/auth').AuthRequest, res, next));
 
 router.get('/', ProgressController.getAllProgress);
 

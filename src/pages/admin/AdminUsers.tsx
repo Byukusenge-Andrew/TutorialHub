@@ -7,8 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useAuth } from '@/providers/AuthProvider';
 import EditUser from '../../components/EditUser';
-import { Navigate, redirect } from 'react-router-dom';
-import { set } from 'mongoose';
 
 export function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);

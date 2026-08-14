@@ -1,8 +1,8 @@
 import { Document, Schema, model } from 'mongoose';
 
 export interface TestCase {
-  input: any;
-  output: any;
+  input: unknown;
+  output: unknown;
   explanation?: string;
   isHidden?: boolean;
 }

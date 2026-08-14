@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { BookOpen, Code2, Keyboard, Users } from 'lucide-react';
+import { BookOpen, Code2, Keyboard } from 'lucide-react';
 
 export function Navbar() {
   const { user, logout } = useAuthStore();

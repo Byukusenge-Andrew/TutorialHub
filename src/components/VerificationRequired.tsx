@@ -21,9 +21,10 @@ export const VerificationRequired: React.FC<VerificationRequiredProps> = ({ emai
       if (response.data.status === 'success') {
         setSuccess(true);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error resending verification:', error);
-      setError(error.response?.data?.message || 'Failed to send verification email. Please try again later.');
+      const msg = axios.isAxiosError(error) ? error.response?.data?.message : undefined;
+      setError(msg || 'Failed to send verification email. Please try again later.');
     } finally {
       setLoading(false);
     }

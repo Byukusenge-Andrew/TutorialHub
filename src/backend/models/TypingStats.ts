@@ -1,4 +1,4 @@
-import { Document, Schema, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
 
 export interface ITypingStats {
   userId: Schema.Types.ObjectId;

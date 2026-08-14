@@ -42,9 +42,10 @@ export const ResetPassword = () => {
           navigate('/login');
         }, 3000);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Password reset error:', err);
-      setError(err.response?.data?.message || 'Failed to reset password. The link may be invalid or expired.');
+      const msg = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      setError(msg || 'Failed to reset password. The link may be invalid or expired.');
     } finally {
       setLoading(false);
     }

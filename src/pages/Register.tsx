@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/providers/AuthProvider';
 import { Loader2, UserPlus, Eye, EyeOff, Check, X } from 'lucide-react';
+import axios from 'axios';
 
 function PasswordRule({ met, label }: { met: boolean; label: string }) {
   return (
@@ -37,8 +38,9 @@ export const Register = () => {
     try {
       await register(name, email, password);
       navigate('/login');
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Failed to register. Please try again.');
+    } catch (err: unknown) {
+      const msg = axios.isAxiosError(err) ? err.response?.data?.message : undefined;
+      setError(msg || 'Failed to register. Please try again.');
     } finally {
       setLoading(false);
     }

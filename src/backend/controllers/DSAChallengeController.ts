@@ -7,7 +7,7 @@ import { catchAsync } from '../utils/catchAsync';
 class DSAChallengeController {
   getChallenges = catchAsync(async (req: Request, res: Response) => {
     const { difficulty, category, tag } = req.query;
-    const query: any = {};
+    const query: Record<string, unknown> = {};
 
     if (difficulty) query.difficulty = difficulty;
     if (category) query.category = category;
@@ -60,8 +60,8 @@ class DSAChallengeController {
     }
 
     const result = await CodeExecutionService.executeCode(
-      code,
-      language,
+      code as string,
+      language as string,
       challenge.testCases
     );
 
@@ -74,9 +74,9 @@ class DSAChallengeController {
 
     // Record submission
     challenge.submissions.push({
-      userId: req.user.id,
-      code,
-      language,
+      userId: req.user?._id || req.user?.id,
+      code: code as string,
+      language: language as string,
       ...result,
       createdAt: new Date()
     });
@@ -92,7 +92,7 @@ class DSAChallengeController {
   createChallenge = catchAsync(async (req: AuthRequest, res: Response) => {
     const challenge = await DSAChallenge.create({
       ...req.body,
-      authorId: req.user.id
+      authorId: req.user?._id || req.user?.id
     });
 
     res.status(201).json({

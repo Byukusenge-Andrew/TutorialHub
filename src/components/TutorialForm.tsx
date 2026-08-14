@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTutorialStore } from '../store/tutorial-store';
 import { useAuthStore } from '../store/auth-store';
-import { Plus, Save, Minus } from 'lucide-react';
+import { Plus, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Editor from '@monaco-editor/react';
 
@@ -27,7 +27,7 @@ export function TutorialForm() {
       content,
       author: user,
       authorId: {
-        _id: user.id,
+        _id: user._id || (user as { id?: string }).id || '',
         name: user.name,
         email: user.email
       },

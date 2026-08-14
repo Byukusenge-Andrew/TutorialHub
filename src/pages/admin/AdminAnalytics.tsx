@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,8 @@ import { Loader2 } from 'lucide-react';
 export function AdminAnalytics() {
   const [activeTab, setActiveTab] = useState('overview');
   
-  const { data: analyticsData, isLoading } = useQuery({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: analyticsData, isLoading } = useQuery<any>({
     queryKey: ['admin-analytics'],
     queryFn: () => api.admin.getAnalytics(),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -126,7 +127,7 @@ export function AdminAnalytics() {
                         dataKey="value"
                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                       >
-                        {analyticsData?.contentDistribution?.map((entry, index) => (
+                        {(analyticsData?.contentDistribution as Array<{ name: string; value: number }>)?.map((_entry, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
@@ -378,7 +379,7 @@ export function AdminAnalytics() {
                         dataKey="value"
                         label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                       >
-                        {analyticsData?.featureUsage?.map((entry, index) => (
+                        {(analyticsData?.featureUsage as Array<{ name: string; value: number }>)?.map((_entry, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
