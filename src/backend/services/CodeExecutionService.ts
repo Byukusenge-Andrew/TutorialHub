@@ -24,13 +24,30 @@ export class CodeExecutionService {
     });
 
     try {
-      // Wrap user code in a function
+      // Wrap user code in a function exporter
       const wrappedCode = `
         ${code}
-        module.exports = solution;
+
+        let targetFn;
+        try {
+          if (typeof solution === 'function') targetFn = solution;
+          else if (typeof twoSum === 'function') targetFn = twoSum;
+          else if (typeof main === 'function') targetFn = main;
+          else if (typeof solve === 'function') targetFn = solve;
+        } catch (e) {}
+
+        module.exports = targetFn;
       `;
 
-      const solution = vm.run(wrappedCode);
+      const fn = vm.run(wrappedCode);
+      if (typeof fn !== 'function') {
+        return {
+          passed: false,
+          executionTime: 0,
+          memory: process.memoryUsage().heapUsed / 1024 / 1024,
+          error: 'No valid solution function (e.g. solution or twoSum) found in submitted code'
+        };
+      }
       
       // Define startTime variable here
       let startTime = performance.now();
@@ -41,11 +58,15 @@ export class CodeExecutionService {
         startTime = performance.now();
         
         try {
-          const result = solution(testCase.input);
+          const rawInput = testCase.input;
+          const args = Array.isArray(rawInput) ? rawInput : [rawInput];
+          const result = fn(...args);
           const executionTime = performance.now() - startTime;
           
+          const expected = testCase.output !== undefined ? testCase.output : (testCase as unknown as { expectedOutput: unknown }).expectedOutput;
+          
           // Deep equality check
-          if (JSON.stringify(result) !== JSON.stringify(testCase.output)) {
+          if (JSON.stringify(result) !== JSON.stringify(expected)) {
             return {
               passed: false,
               executionTime,

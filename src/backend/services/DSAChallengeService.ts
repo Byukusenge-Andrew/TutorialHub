@@ -1,6 +1,7 @@
 import { IDSAChallenge } from '../models/DSAChallenge';
 import DSAChallenge from '../models/DSAChallenge';
 import { AppError } from '../utils/errors';
+import { CodeExecutionService } from './CodeExecutionService';
 
 export class DSAChallengeService {
   async getChallenges(): Promise<IDSAChallenge[]> {
@@ -27,22 +28,13 @@ export class DSAChallengeService {
   async submitSolution(challengeId: string, solution: string, userId: string) {
     const challenge = await this.getChallengeById(challengeId);
     
-    // Run test cases
-    let passed = 0;
-    const results = challenge.testCases.map(testCase => {
-      try {
-        const fn = new Function('input', solution);
-        const result = fn(testCase.input);
-        const isCorrect = JSON.stringify(result) === JSON.stringify(testCase.output);
-        if (isCorrect) passed++;
-        return { passed: isCorrect, input: testCase.input, expected: testCase.output, received: result };
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-        return { passed: false, input: testCase.input, expected: testCase.output, error: errorMessage };
-      }
-    });
+    const evalResult = await CodeExecutionService.executeCode(
+      solution,
+      'javascript',
+      challenge.testCases
+    );
 
-    const isPassed = passed === challenge.testCases.length;
+    const isPassed = evalResult.passed;
 
     // Update challenge stats and push submission
     challenge.totalSubmissions = (challenge.totalSubmissions || 0) + 1;
@@ -66,10 +58,10 @@ export class DSAChallengeService {
     await challenge.save();
 
     return {
-      success: passed === challenge.testCases.length,
-      results,
+      success: isPassed,
+      results: evalResult,
       stats: {
-        passed,
+        passed: isPassed ? challenge.testCases.length : 0,
         total: challenge.testCases.length,
         successRate: challenge.successRate
       }
