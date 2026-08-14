@@ -1,15 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { ChevronRight, Loader2, BookOpen, ChevronLeft } from 'lucide-react';
+import React, { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { ChevronRight, ChevronLeft } from 'lucide-react';
 import { api } from '@/services/api';
-import { Tutorial, Section } from '@/types';
 import { Button } from '@/components/ui/button';
-import { MarkdownRenderer } from '@/components/MarkdownRenderer';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 export function TutorialDetail() {
   const { id } = useParams<{ id: string }>();

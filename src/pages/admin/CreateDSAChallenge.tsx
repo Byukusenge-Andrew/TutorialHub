@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { Plus, Play, Trash2 } from 'lucide-react';
+import { Upload, Plus, Play, Trash2 } from 'lucide-react';
 import { TestCase } from '../../types';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAuth } from '@/providers/AuthProvider';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { BulkImportModal } from '@/components/admin/BulkImportModal';
 
 // Add these type definitions
 type InputFormat = 'array' | 'number' | 'string' | 'matrix';
@@ -162,6 +163,7 @@ export function CreateDSAChallenge() {
   });
   const [testResults, setTestResults] = useState<Array<{ success: boolean; error?: string }>>([]);
   const [isValidating, setIsValidating] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -169,11 +171,21 @@ export function CreateDSAChallenge() {
       return;
     }
     if (user.role !== 'admin') {
-      navigate('/dsa');
+      navigate('/');
       return;
     }
     setIsLoading(false);
   }, [user, navigate]);
+
+  const handleFormatChange = (format: InputFormat) => {
+    setExercise(prev => ({
+      ...prev,
+      inputFormat: format,
+      starterCode: problemTemplates[format].starterCode,
+      solution: problemTemplates[format].solutionCode
+    }));
+    setTestResults([]);
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -225,44 +237,16 @@ export function CreateDSAChallenge() {
   const validateSolution = async () => {
     setIsValidating(true);
     try {
-      // Check if solution is empty or just the template
-      if (exercise.solution === problemTemplates[exercise.inputFormat].solutionCode) {
-        toast.error('Please enter your solution before testing');
-        setIsValidating(false);
-        return;
-      }
-
-      const results = exercise.testCases.map((testCase) => {
+      const results = exercise.testCases.map(tc => {
         try {
-          if (!testCase.input || !testCase.expectedOutput) {
-            return { success: false, error: 'Test case input and expected output are required' };
-          }
+          const parsedInput = parseInput(tc.input, exercise.inputFormat);
+          const parsedExpected = parseInput(tc.expectedOutput, exercise.inputFormat);
+          const result = runSolutionInSandbox(exercise.solution, parsedInput, exercise.inputFormat);
 
-          // Parse input and expected output
-          const input = parseInput(testCase.input, exercise.inputFormat);
-          const expectedOutput = parseInput(testCase.expectedOutput, exercise.inputFormat);
-
-          // Run solution with format
-          const output = runSolutionInSandbox(exercise.solution, input, exercise.inputFormat);
-
-          // Compare results based on format
-          let success = false;
-          switch (exercise.inputFormat) {
-            case 'array':
-            case 'matrix':
-              success = JSON.stringify(output) === JSON.stringify(expectedOutput);
-              break;
-            case 'number':
-              success = output === expectedOutput;
-              break;
-            case 'string':
-              success = output === expectedOutput;
-              break;
-          }
-
+          const isMatch = JSON.stringify(result) === JSON.stringify(parsedExpected);
           return {
-            success,
-            error: success ? undefined : 'Output does not match expected result'
+            success: isMatch,
+            error: isMatch ? undefined : `Expected ${JSON.stringify(parsedExpected)}, but got ${JSON.stringify(result)}`
           };
         } catch (error) {
           return {
@@ -319,7 +303,27 @@ export function CreateDSAChallenge() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Create DSA Exercise</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Create DSA Exercise</h1>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsImportModalOpen(true)}
+          className="inline-flex items-center"
+        >
+          <Upload className="w-4 h-4 mr-2" />
+          Bulk Import Exercises
+        </Button>
+      </div>
+
+      <BulkImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        type="dsa"
+        onSuccess={() => {
+          navigate('/dsa');
+        }}
+      />
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card className="p-6">
           <div className="grid gap-4">
@@ -380,14 +384,7 @@ export function CreateDSAChallenge() {
               <label htmlFor="format" className="block text-sm font-medium mb-1">Input Format</label>
               <Select
                 value={exercise.inputFormat}
-                onValueChange={(value) => {
-                  setExercise(prev => ({
-                    ...prev,
-                    inputFormat: value as InputFormat,
-                    starterCode: problemTemplates[value as InputFormat].starterCode,
-                    solution: problemTemplates[value as InputFormat].solutionCode
-                  }));
-                }}
+                onValueChange={(value) => handleFormatChange(value as InputFormat)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select format" />

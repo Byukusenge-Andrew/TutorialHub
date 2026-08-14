@@ -1,6 +1,6 @@
 import { Document, Schema, model } from 'mongoose';
 
-export interface ITypingStats extends Document {
+export interface ITypingStats {
   userId: Schema.Types.ObjectId;
   wpm: number;
   accuracy: number;
@@ -48,7 +48,7 @@ const TypingStatsSchema = new Schema({
     default: Date.now,
     index: true 
   }
-});
+}, { suppressReservedKeysWarning: true });
 
 // Compound index for efficient user history queries
 TypingStatsSchema.index({ userId: 1, date: -1 });

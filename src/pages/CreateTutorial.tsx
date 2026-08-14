@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
-import { Plus, Minus, Save, ChevronRight, ChevronDown } from 'lucide-react';
+import { Plus, Minus, Save } from 'lucide-react';
 import { useAuthStore } from '../store/auth-store';
 import { Button } from '@/components/ui/button';
 import { api } from '@/services/api';

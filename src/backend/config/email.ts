@@ -1,12 +1,18 @@
 import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const host = process.env.SMTP_HOST || 'smtp.resend.com';
+const port = Number(process.env.SMTP_PORT) || 465;
 
 export const emailTransporter = nodemailer.createTransport({
-  host: 'smtp.mailersend.net',
-  port: 587,
-  secure: false, // true for 465, false for other ports
+  host,
+  port,
+  secure: port === 465,
   auth: {
-    user: 'MS_qnk3Sb@trial-7dnvo4d5w9xl5r86.mlsender.net',
-    pass: 'mssp.OKIp23S.pr9084z1x9xgw63d.JxAy02p'
+    user: process.env.SMTP_USER || 'resend',
+    pass: process.env.RESEND_API_KEY || process.env.MAILSEND_PASSWORD || ''
   }
 });
 

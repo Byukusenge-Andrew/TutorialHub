@@ -24,3 +24,7 @@ dist-ssr
 *.sw?
 
 .env
+dsa_exercises_import.json
+dsa_exercises_import.csv
+.env.production
+.env.production

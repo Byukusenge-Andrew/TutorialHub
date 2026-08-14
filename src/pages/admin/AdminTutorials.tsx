@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { Plus, Edit, Trash2, Upload } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Tutorial } from '@/types';
 import { Button } from '@/components/ui/button';
+import { BulkImportModal } from '@/components/admin/BulkImportModal';
 
 export function AdminTutorials() {
-  const [tutorials, setTutorials] = useState([]);
+  const [tutorials, setTutorials] = useState<Tutorial[]>([]);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['tutorials'],
     queryFn: () => api.tutorials.getAll(),
@@ -21,26 +25,44 @@ export function AdminTutorials() {
   
   const handleDeleteTutorial = async (tutorialId: string) => {
     await api.tutorials.delete(tutorialId);
-    window.location.reload();
+    queryClient.invalidateQueries({ queryKey: ['tutorials'] });
   };
    
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
   if (!data) return <div>No tutorials found</div>;
-  
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Tutorial Management</h1>
-        <Link
-          to="/admin/tutorials/create"
-          className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
-          <Plus className="w-5 h-5 mr-2" />
-          Create Tutorial
-        </Link>
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Bulk Import
+          </Button>
+          <Link
+            to="/admin/tutorials/create"
+            className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Tutorial
+          </Link>
+        </div>
       </div>
+
+      <BulkImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        type="tutorials"
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['tutorials'] });
+        }}
+      />
 
       <div className="bg-card rounded-lg shadow-sm border border-border">
         <div className="overflow-x-auto">
@@ -55,7 +77,7 @@ export function AdminTutorials() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {tutorials.map((tutorial: any) => (
+              {tutorials.map((tutorial: Tutorial) => (
                 <tr key={tutorial._id || tutorial.id}>
                   <td className="px-6 py-4">{tutorial.title}</td>
                   <td className="px-6 py-4">

@@ -43,8 +43,9 @@ export function TypingPrompt({
   useEffect(() => {
     if (input.length === 1 && !timerActive) {
       setTimerActive(true);
+      setStartTime(Date.now());
     }
-  }, [input.length]);
+  }, [input.length, timerActive]);
 
   // Handle timer
   useEffect(() => {
@@ -68,15 +69,18 @@ export function TypingPrompt({
   }, [input]);
 
   const calculateStats = (): TypingStats => {
-    const wpm = Math.round((input.length / 5) / (timer / 60));
-    const accuracy = Math.round((text.length - incorrectChars.size) / text.length * 100);
-    const score = Math.round((wpm * accuracy) / 100);
+    const elapsedSeconds = Math.max((Date.now() - startTime) / 1000, timer, 0.1);
+    const elapsedMinutes = elapsedSeconds / 60;
+    const wpm = Math.max(0, Math.round((input.length / 5) / elapsedMinutes));
+    const typedLength = Math.max(input.length, 1);
+    const accuracy = Math.max(0, Math.min(100, Math.round(((typedLength - incorrectChars.size) / typedLength) * 100)));
+    const score = Math.max(0, Math.round((wpm * accuracy) / 100));
     
     return {
-      wpm,
-      accuracy,
-      score,
-      duration: (Date.now() - startTime) / 1000,
+      wpm: isNaN(wpm) ? 0 : wpm,
+      accuracy: isNaN(accuracy) ? 0 : accuracy,
+      score: isNaN(score) ? 0 : score,
+      duration: Math.round(elapsedSeconds * 10) / 10,
       characters: text.length,
       errors: incorrectChars.size
     };
@@ -94,10 +98,13 @@ export function TypingPrompt({
 
   useEffect(() => {
     if (currentCharIndex === text.length && !isFinished) {
-      onComplete(calculateStats());
+      const stats = calculateStats();
+      onComplete(stats);
+      handleTestComplete(stats);
     } else if (currentCharIndex > 0) {
       onProgress(calculateStats());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentCharIndex, text.length, isFinished]);
 
   return (

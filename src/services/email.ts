@@ -1,22 +1,25 @@
 import nodemailer from 'nodemailer';
 
+const port = Number(process.env.SMTP_PORT) || 465;
+
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST, // e.g., smtp.mailersend.net
-    port: Number(process.env.SMTP_PORT), // e.g., 587
-    secure: false, // true for 465, false for other ports
+    host: process.env.SMTP_HOST || 'smtp.resend.com',
+    port,
+    secure: port === 465,
     auth: {
-        user: process.env.MAILSEND_USERNAME, // Your MailerSend username
-        pass: process.env.MAILSEND_PASSWORD // Your MailerSend password
+        user: process.env.SMTP_USER || 'resend',
+        pass: process.env.RESEND_API_KEY || process.env.MAILSEND_PASSWORD || ''
     }
 });
 
 export const sendEmail = async (to: string, name: string) => {
+    const fromAddress = process.env.EMAIL_FROM || 'onboarding@resend.dev';
     const mailOptions = {
-        from: `${name}@${process.env.MAILSEND_DOMAIN}`, // sender address
-        to, // list of receivers
-        subject: 'Welcome!', // Subject line
-        text: `Hello ${name}, welcome to our platform!`, // plain text body
-        html: `<b>Hello ${name}, welcome to our platform!</b>` // html body
+        from: `"TutorialHub" <${fromAddress}>`,
+        to,
+        subject: 'Welcome!',
+        text: `Hello ${name}, welcome to our platform!`,
+        html: `<b>Hello ${name}, welcome to our platform!</b>`
     };
 
     try {

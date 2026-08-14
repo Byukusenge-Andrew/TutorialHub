@@ -33,7 +33,7 @@ interface Post {
 
 export function PostDetail() {
   const { id } = useParams<{ id: string }>();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const [newComment, setNewComment] = useState('');
   const queryClient = useQueryClient();
 

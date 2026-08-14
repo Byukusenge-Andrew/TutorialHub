@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { DSAChallenge, TestCase } from '../types';
+import { DSAChallenge } from '../types';
 
 interface DSAState {
   challenges: DSAChallenge[];

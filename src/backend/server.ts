@@ -39,11 +39,12 @@ app.use('/api/community', communityRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error(err.stack);
-  res.status(500).json({
-    status: 'error',
-    message: 'Something went wrong!'
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const statusCode = err.statusCode || 500;
+  console.error('Error:', err.message || err);
+  res.status(statusCode).json({
+    status: err.status || 'error',
+    message: err.message || 'Something went wrong!'
   });
 });
 //return message if server directely requested in browser

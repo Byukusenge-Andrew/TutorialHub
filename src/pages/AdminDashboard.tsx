@@ -78,7 +78,7 @@ export function AdminDashboard() {
             <Users className="h-8 w-8 text-blue-500" />
             <div>
               <p className="text-sm text-muted-foreground">Total Users</p>
-              <h3 className="text-2xl font-bold">{stats.totalUsers}</h3>
+              <h3 className="text-2xl font-bold">{isLoading ? '...' : stats.totalUsers}</h3>
             </div>
           </div>
         </div>

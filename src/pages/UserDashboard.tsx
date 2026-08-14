@@ -20,26 +20,30 @@ export function UserDashboard() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['user-stats'],
     queryFn: async () => {
-      const [tutorials, typing, dsa] = await Promise.all([
-        api.tutorials.getUserProgress(),
-        api.typing.getHistory(),
-        api.dsa.getUserStats(),
-      ]);
-
-      const bestScore = (typing?.history || []).reduce(
+      const studentData = await api.dashboard.getStudentStats();
+      const typingHistory = await api.typing.getHistory().catch(() => ({ history: [] }));
+      
+      const bestScore = studentData.typing?.bestWpm || (typingHistory?.history || []).reduce(
         (max: number, test: { wpm: number }) => (test.wpm > max ? test.wpm : max),
         0
       );
 
-      const recentActivity = [
-        ...(typing?.history || []).slice(0, 5).map((test: { wpm: number; date: string }) => ({
-          type: 'typing',
-          title: `Typing Test — ${test.wpm} WPM`,
-          date: test.date,
-        })),
-      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      const recentActivity = studentData.community?.recentActivity?.length
+        ? studentData.community.recentActivity
+        : [
+            ...(typingHistory?.history || []).slice(0, 5).map((test: { wpm: number; date: string }) => ({
+              type: 'typing',
+              title: `Typing Test — ${test.wpm} WPM`,
+              date: test.date,
+            })),
+          ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-      return { tutorials, typing: { ...typing, bestScore }, dsa, recentActivity };
+      return {
+        tutorials: studentData.tutorials,
+        typing: { ...studentData.typing, bestScore, history: typingHistory?.history || [] },
+        dsa: studentData.dsa,
+        recentActivity
+      };
     },
   });
 

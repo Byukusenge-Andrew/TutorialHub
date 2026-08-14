@@ -1,11 +1,15 @@
 import { Router } from 'express';
 import TutorialController from '../controllers/TutorialController';
+import BulkImportController from '../controllers/BulkImportController';
 import { protect } from '../middleware/auth';
 
 const router = Router();
 
 // Get user progress
 router.get('/progress', protect, TutorialController.getUserProgress);
+
+// Bulk import tutorials
+router.post('/bulk-import', protect, BulkImportController.importTutorials);
 
 // Create tutorial
 router.post('/create', protect, TutorialController.createTutorial);

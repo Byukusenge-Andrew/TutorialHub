@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TypingLeaderboard } from '@/components/TypingLeaderboard';
 import { TypingPrompt } from '@/components/TypingPrompt';
 import { useTypingPrompt } from '@/hooks/use-typing-prompt';

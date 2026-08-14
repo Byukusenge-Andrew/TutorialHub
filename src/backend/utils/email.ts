@@ -1,23 +1,14 @@
-import nodemailer from 'nodemailer';
 import logger from './logger';
 import { emailTransporter } from '../config/email';
 
-// Create transporter with MailerSend credentials
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.MAILSEND_USERNAME,
-    pass: process.env.MAILSEND_PASSWORD,
-  },
-});
+const DEFAULT_FROM = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+const SENDER_HEADER = `"TutorialHub" <${DEFAULT_FROM}>`;
 
 // Function to send welcome email
 export const sendWelcomeEmail = async (to: string, name: string) => {
   try {
     await emailTransporter.sendMail({
-      from: 'MS_qnk3Sb@trial-7dnvo4d5w9xl5r86.mlsender.net',
+      from: SENDER_HEADER,
       to,
       subject: 'Welcome to TutorialHub!',
       html: `
@@ -37,7 +28,7 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string):
     const resetUrl = `${process.env.VITE_API_URL}/reset-password/${resetToken}`;
     
     const mailOptions = {
-      from: `"Code Learning Platform" <${process.env.MAILSEND_USERNAME}>`,
+      from: SENDER_HEADER,
       to: email,
       subject: 'Password Reset Request',
       html: `
@@ -52,7 +43,7 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string):
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    await emailTransporter.sendMail(mailOptions);
     logger.info(`Password reset email sent to ${email}`);
   } catch (error) {
     logger.error('Error sending password reset email:', error);
@@ -64,7 +55,7 @@ export const sendPasswordResetEmail = async (email: string, resetToken: string):
 export const sendNotificationEmail = async (email: string, subject: string, message: string): Promise<void> => {
   try {
     const mailOptions = {
-      from: `"Code Learning Platform" <${process.env.MAILSEND_USERNAME}>`,
+      from: SENDER_HEADER,
       to: email,
       subject,
       html: `
@@ -76,7 +67,7 @@ export const sendNotificationEmail = async (email: string, subject: string, mess
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    await emailTransporter.sendMail(mailOptions);
     logger.info(`Notification email sent to ${email}`);
   } catch (error) {
     logger.error('Error sending notification email:', error);
@@ -94,13 +85,13 @@ export const sendChallengeCompletionEmail = async (email: string, challengeName:
 
   try {
     const mailOptions = {
-      from: `"Code Learning Platform" <${process.env.MAILSEND_USERNAME}>`,
+      from: SENDER_HEADER,
       to: email,
       subject,
       html: content
     };
 
-    await transporter.sendMail(mailOptions);
+    await emailTransporter.sendMail(mailOptions);
     logger.info(`Challenge completion email sent to ${email}`);
     return true;
   } catch (error) {
@@ -111,16 +102,12 @@ export const sendChallengeCompletionEmail = async (email: string, challengeName:
 
 // Function to send verification email
 export const sendVerificationEmail = async (to: string, name: string, token: string) => {
-  // const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  //if dev
-  // const frontendUrl = 'http://localhost:5173';
-  //if prod
   const frontendUrl = 'https://tutorial-hub-01.vercel.app';
   const verificationUrl = `${frontendUrl}/verify-email/${token}`;
   
   try {
     await emailTransporter.sendMail({
-      from: 'MS_qnk3Sb@trial-7dnvo4d5w9xl5r86.mlsender.net',
+      from: SENDER_HEADER,
       to,
       subject: 'Verify your email address',
       html: `
@@ -134,4 +121,5 @@ export const sendVerificationEmail = async (to: string, name: string, token: str
     console.error('Error sending verification email:', error);
     throw error;
   }
-}; 
+};
+ 

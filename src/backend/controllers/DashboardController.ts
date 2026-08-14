@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { catchAsync } from '../utils/catchAsync';
 import TypingStats from '../models/TypingStats';
@@ -9,7 +10,8 @@ import Post from '../models/Post';
 
 class DashboardController {
   getStats = catchAsync(async (req: AuthRequest, res: Response) => {
-    const userId = req.user.id;
+    const rawUserId = req.user._id || req.user.id;
+    const userId = new Types.ObjectId(rawUserId.toString());
 
     // Get typing stats
     const typingStats = await TypingStats.aggregate([
@@ -116,7 +118,8 @@ class DashboardController {
   });
 
   getStudentStats = catchAsync(async (req: AuthRequest, res: Response) => {
-    const userId = req.user._id;
+    const rawUserId = req.user._id || req.user.id;
+    const userId = new Types.ObjectId(rawUserId.toString());
 
     const [tutorials, typing, dsa, community] = await Promise.all([
       // Get tutorial stats

@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Mail, Key, Shield, Award, BookOpen, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { User, Key, Shield, Award, BookOpen, Clock, CheckCircle, XCircle, Keyboard, BrainCircuit } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/services/api';
 
 export function Profile() {
   const { user } = useAuth();
@@ -18,6 +20,11 @@ export function Profile() {
     confirmPassword: '',
   });
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['student-profile-stats'],
+    queryFn: () => api.dashboard.getStudentStats(),
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,21 +86,30 @@ export function Profile() {
                   <BookOpen className="h-4 w-4 text-blue-600" />
                   <span className="text-sm">Tutorials Completed</span>
                 </div>
-                <span className="font-bold">12</span>
+                <span className="font-bold">{statsLoading ? '...' : (stats?.tutorials?.completed ?? 0)}</span>
               </div>
               <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-green-600" />
-                  <span className="text-sm">Hours Spent</span>
+                  <span className="text-sm">Time Spent</span>
                 </div>
-                <span className="font-bold">24</span>
+                <span className="font-bold">
+                  {statsLoading ? '...' : `${Math.round((stats?.tutorials?.totalTime ?? 0) / 60)} mins`}
+                </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <Award className="h-4 w-4 text-purple-600" />
-                  <span className="text-sm">Achievements</span>
+                  <Keyboard className="h-4 w-4 text-purple-600" />
+                  <span className="text-sm">Best Typing WPM</span>
                 </div>
-                <span className="font-bold">5</span>
+                <span className="font-bold">{statsLoading ? '...' : Math.round(stats?.typing?.bestWpm ?? 0)}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <BrainCircuit className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm">DSA Solved</span>
+                </div>
+                <span className="font-bold">{statsLoading ? '...' : (stats?.dsa?.solved ?? 0)}</span>
               </div>
             </CardContent>
           </Card>

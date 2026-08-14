@@ -54,7 +54,7 @@ export const useThemeStore = create<ThemeState>()(
             mediaQuery.addEventListener('change', (e) => {
               if (state.theme === 'system') {
                 const newTheme = e.matches ? 'dark' : 'light';
-                state.setTheme('system');
+                updateDocumentClass(newTheme);
               }
             });
           }

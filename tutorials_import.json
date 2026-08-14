@@ -1,0 +1,66 @@
+[
+  {
+    "title": "JavaScript Fundamentals for Beginners",
+    "description": "Master core JavaScript concepts including variables, data types, functions, and control flow.",
+    "category": "Programming Languages",
+    "tags": ["javascript", "web", "frontend", "programming"],
+    "sections": [
+      {
+        "title": "1. Variables & Scope",
+        "content": "JavaScript supports var, let, and const for variable declaration. Prefer const by default and let for reassignable variables.",
+        "order": 1
+      },
+      {
+        "title": "2. Functions & Arrow Expressions",
+        "content": "Functions can be declared using function keyword or ES6 arrow syntax: const add = (a, b) => a + b;",
+        "order": 2
+      },
+      {
+        "title": "3. Objects & Arrays",
+        "content": "Arrays store ordered collections, and objects store key-value pairs.",
+        "order": 3
+      }
+    ]
+  },
+  {
+    "title": "React.js Modern Web Development",
+    "description": "Build interactive single page applications using React component architecture and hooks.",
+    "category": "Frontend Frameworks",
+    "tags": ["react", "frontend", "javascript", "ui"],
+    "sections": [
+      {
+        "title": "1. Components & JSX",
+        "content": "React components are reusable building blocks written in JSX syntax.",
+        "order": 1
+      },
+      {
+        "title": "2. Managing State with useState",
+        "content": "State allows components to preserve user interactions and render dynamic content.",
+        "order": 2
+      },
+      {
+        "title": "3. Data Fetching with useEffect",
+        "content": "Side effects such as API calls and subscriptions are handled inside the useEffect hook.",
+        "order": 3
+      }
+    ]
+  },
+  {
+    "title": "Node.js & Express REST API Architecture",
+    "description": "Learn to design, build, and deploy production-ready RESTful APIs with Node.js and Express.",
+    "category": "Backend Engineering",
+    "tags": ["nodejs", "express", "backend", "api"],
+    "sections": [
+      {
+        "title": "1. Express Server Setup",
+        "content": "Set up an Express server with CORS, JSON parsing middleware, and route modules.",
+        "order": 1
+      },
+      {
+        "title": "2. Controller & Service Pattern",
+        "content": "Separate routing logic from business logic using controllers and services.",
+        "order": 2
+      }
+    ]
+  }
+]

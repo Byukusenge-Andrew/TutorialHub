@@ -185,6 +185,18 @@ export const api = {
         return { completed: 0, inProgress: 0 };
       }
     },
+
+    bulkImport: async (items: unknown[]) => {
+      const response = await fetch(`${API_URL}/tutorials/bulk-import`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        } as HeadersInit,
+        body: JSON.stringify({ items }),
+      });
+      return handleResponse<{ status: string; message: string; count: number }>(response);
+    },
   },
 
 
@@ -426,6 +438,46 @@ export const api = {
       });
       return response.json();
     },
+
+    bulkImport: async (items: unknown[]) => {
+      const response = await fetch(`${API_URL}/dsa/exercises/bulk-import`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        } as HeadersInit,
+        body: JSON.stringify({ items }),
+      });
+      return handleResponse<{ status: string; message: string; count: number }>(response);
+    },
+  },
+
+  dashboard: {
+    getStudentStats: async () => {
+      try {
+        const response = await fetch(`${API_URL}/dashboard/student-stats`, {
+          headers: getAuthHeaders() as HeadersInit
+        });
+        const data = await handleResponse<{
+          status: string;
+          data: {
+            tutorials: { completed: number; inProgress: number; totalTime: number };
+            typing: { avgWpm: number; avgAccuracy: number; bestWpm: number; totalTests: number };
+            dsa: { solved: number; totalAttempted: number; successRate: number };
+            community: { posts: number; comments: number; recentActivity: Array<{ type: string; title: string; date: string }> };
+          };
+        }>(response);
+        return data.data;
+      } catch (error) {
+        console.error('Error fetching dashboard student stats:', error);
+        return {
+          tutorials: { completed: 0, inProgress: 0, totalTime: 0 },
+          typing: { avgWpm: 0, avgAccuracy: 0, bestWpm: 0, totalTests: 0 },
+          dsa: { solved: 0, totalAttempted: 0, successRate: 0 },
+          community: { posts: 0, comments: 0, recentActivity: [] }
+        };
+      }
+    }
   },
 
   admin: {
