@@ -30,11 +30,14 @@ export default defineConfig({
       'recharts'
     ]
   },
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
   build: {
     commonjsOptions: {
       include: [/node_modules/],
     },
     outDir: 'dist',
-    sourcemap: true
+    sourcemap: false
   },
 });

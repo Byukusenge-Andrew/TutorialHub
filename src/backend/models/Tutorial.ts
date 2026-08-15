@@ -2,6 +2,7 @@ import { Document, Schema, model } from 'mongoose';
 
 export interface Section {
   _id?: string;
+  id?: string;
   title: string;
   content: string;
   order: number;

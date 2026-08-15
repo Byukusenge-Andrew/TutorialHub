@@ -19,17 +19,14 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
       ? authHeader.split(' ')[1] 
       : authHeader;
 
+    const jwtSecret = process.env.JWT_SECRET || 'default-secret-change-in-production-mode';
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let decoded: any;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+      decoded = jwt.verify(token, jwtSecret);
     } catch (err) {
-      // Fallback verification for tokens issued prior to secret rotation
-      try {
-        decoded = jwt.verify(token, 'your-secret-key');
-      } catch (fallbackErr) {
-        throw new AuthError('Invalid or expired authentication token');
-      }
+      throw new AuthError('Invalid or expired authentication token');
     }
 
     const user = await User.findById(decoded.id);
@@ -41,7 +38,6 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
     req.user = user;
     next();
   } catch (error) {
-    console.error('Authorization error:', error);
     next(error instanceof AuthError ? error : new AuthError('Not authorized'));
   }
 };
@@ -53,11 +49,8 @@ export const authorizeAdmin = async (req: Request, res: Response, next: NextFunc
     if (!token) {
       throw new AuthError('No token provided');
     }
-    try {
-      jwt.verify(token, process.env.JWT_SECRET as string);
-    } catch (err) {
-      jwt.verify(token, 'your-secret-key');
-    }
+    const jwtSecret = process.env.JWT_SECRET || 'default-secret-change-in-production-mode';
+    jwt.verify(token, jwtSecret);
     next();
   } catch (error) {
     next(new AuthError('Not authorized as admin'));

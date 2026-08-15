@@ -12,10 +12,47 @@ import communityRoutes from './routes/community';
 import dashboardRoutes from './routes/dashboard';
 import connectDB from './config/database';
 import { AddressInfo } from 'net';
+import { securityHeaders, noSqlSanitizer, rateLimiter } from './middleware/security';
 
 dotenv.config();
 
 const app = express();
+
+// Disable x-powered-by header
+app.disable('x-powered-by');
+
+// Apply HTTP Security Headers & NoSQL Sanitization
+app.use(securityHeaders);
+app.use(noSqlSanitizer);
+
+// Configure CORS with allowed origins
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV === 'development') {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS restriction: origin not allowed'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parser with payload size limit (protect against DoS)
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Apply rate limiting
+const generalLimiter = rateLimiter({ windowMs: 15 * 60 * 1000, max: 200 });
+const authLimiter = rateLimiter({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too many authentication attempts. Please try again later.' });
+
+app.use('/api', generalLimiter);
+app.use('/api/auth', authLimiter);
 
 // Connect to MongoDB asynchronously
 connectDB().catch(err => {
@@ -35,10 +72,6 @@ app.use(async (req, res, next) => {
     });
   }
 });
-
-// Middleware
-app.use(cors());
-app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);

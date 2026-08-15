@@ -406,7 +406,7 @@ export const api = {
     },
 
     createChallenge: async (challenge: unknown) => {
-      const response = await fetch('/api/dsa/exercises/create', {
+      const response = await fetch(`${API_URL}/dsa/exercises/create`, {
         method: 'POST',
         headers: {
           ...getAuthHeaders(),
@@ -430,7 +430,7 @@ export const api = {
     },
 
     testSolution: async (solution: string, input: string) => {
-      const response = await fetch('/api/dsa/test-solution', {
+      const response = await fetch(`${API_URL}/dsa/test-solution`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

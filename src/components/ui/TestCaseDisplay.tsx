@@ -7,15 +7,15 @@ interface TestCaseDisplayProps {
     result: SubmissionResult | null;
 }
 
-function diffLines(a: string, b: string) {
-    const aLines = a.split('\n');
-    const bLines = b.split('\n');
-    const max = Math.max(aLines.length, bLines.length);
-    return Array.from({ length: max }, (_, i) => ({
-        expected: aLines[i] ?? '',
-        received: bLines[i] ?? '',
-        same: aLines[i] === bLines[i],
-    }));
+function formatValue(val: unknown): string {
+    if (val === undefined || val === null) return '';
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number' || typeof val === 'boolean') return String(val);
+    try {
+        return JSON.stringify(val, null, 2);
+    } catch (e) {
+        return String(val);
+    }
 }
 
 export function TestCaseDisplay({ testCases, result }: TestCaseDisplayProps) {
@@ -58,9 +58,8 @@ export function TestCaseDisplay({ testCases, result }: TestCaseDisplayProps) {
                     bgClass = 'bg-destructive/5';
                 }
 
-                const diffs = isFailed && result?.failedTestCase
-                    ? diffLines(tc.expectedOutput, result.failedTestCase.received)
-                    : null;
+                const expectedStr = formatValue(tc.expectedOutput);
+                const receivedStr = result?.failedTestCase ? formatValue(result.failedTestCase.received) : '';
 
                 return (
                     <div key={index} className={`rounded-xl border ${borderClass} ${bgClass} overflow-hidden transition-colors`}>
@@ -86,42 +85,30 @@ export function TestCaseDisplay({ testCases, result }: TestCaseDisplayProps) {
                         {/* Body */}
                         {isOpen && (
                             <div className="px-4 pb-4 space-y-3 border-t border-border/50 pt-3">
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className={`grid ${result ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
                                     <div>
                                         <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Input</p>
                                         <pre className="bg-muted rounded-lg p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
-                                            {tc.input}
+                                            {formatValue(tc.input)}
                                         </pre>
                                     </div>
                                     <div>
                                         <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Expected</p>
                                         <pre className="bg-muted rounded-lg p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed">
-                                            {tc.expectedOutput}
+                                            {expectedStr}
                                         </pre>
                                     </div>
-                                </div>
-
-                                {isFailed && result?.failedTestCase && (
-                                    <div>
-                                        <p className="text-xs font-semibold text-destructive mb-1.5 uppercase tracking-wide">Your Output</p>
-                                        {diffs ? (
-                                            <div className="bg-muted rounded-lg p-3 text-xs font-mono space-y-0.5 overflow-x-auto">
-                                                {diffs.map((d, di) => (
-                                                    <div
-                                                        key={di}
-                                                        className={`${!d.same ? 'text-destructive bg-destructive/10 rounded px-1' : 'text-muted-foreground'}`}
-                                                    >
-                                                        {d.received || '\u00a0'}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <pre className="bg-muted rounded-lg p-3 text-xs font-mono text-destructive overflow-x-auto whitespace-pre-wrap">
-                                                {result.failedTestCase.received}
+                                    {result && (
+                                        <div>
+                                            <p className={`text-xs font-semibold mb-1.5 uppercase tracking-wide ${isFailed ? 'text-destructive' : 'text-emerald-500'}`}>
+                                                Your Output
+                                            </p>
+                                            <pre className={`rounded-lg p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap leading-relaxed ${isFailed ? 'bg-destructive/10 text-destructive' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
+                                                {isPassed ? expectedStr : (receivedStr || 'No output')}
                                             </pre>
-                                        )}
-                                    </div>
-                                )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
                     </div>

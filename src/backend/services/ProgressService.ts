@@ -43,7 +43,7 @@ export class ProgressService {
 
     // Validate that the section exists in the tutorial
     const sectionExists = tutorial.sections.some(
-      section => section.id && section.id.toString() === completedSection
+      section => (section._id && section._id.toString() === completedSection) || (section.id && section.id.toString() === completedSection)
     );
     if (!sectionExists) {
       throw new AppError('Invalid section ID', 400);

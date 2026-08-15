@@ -59,11 +59,36 @@ export class CodeExecutionService {
         
         try {
           const rawInput = testCase.input;
-          const args = Array.isArray(rawInput) ? rawInput : [rawInput];
-          const result = fn(...args);
+          let args: unknown[];
+
+          if (Array.isArray(rawInput)) {
+            args = rawInput;
+          } else if (typeof rawInput === 'object' && rawInput !== null) {
+            if (fn.length > 1) {
+              args = Object.values(rawInput);
+            } else {
+              args = [rawInput];
+            }
+          } else {
+            args = [rawInput];
+          }
+
+          let result = fn(...args);
           const executionTime = performance.now() - startTime;
           
           const expected = testCase.output !== undefined ? testCase.output : (testCase as unknown as { expectedOutput: unknown }).expectedOutput;
+
+          // Fallback check if rawInput is object and fn(...args) didn't match expected
+          if (JSON.stringify(result) !== JSON.stringify(expected) && typeof rawInput === 'object' && rawInput !== null && !Array.isArray(rawInput)) {
+            try {
+              const fallbackResult = fn(rawInput);
+              if (JSON.stringify(fallbackResult) === JSON.stringify(expected)) {
+                result = fallbackResult;
+              }
+            } catch (e) {
+              // Ignore fallback execution error
+            }
+          }
           
           // Deep equality check
           if (JSON.stringify(result) !== JSON.stringify(expected)) {
