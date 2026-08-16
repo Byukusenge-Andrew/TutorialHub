@@ -15,7 +15,6 @@ export function AdminUsers() {
   const currentUser = useAuth();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  // console.log("Current user:", currentUser);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -29,7 +28,6 @@ export function AdminUsers() {
           toast.error('Failed to load users data');
         }
       } catch (error) {
-        console.error('Error fetching users:', error);
         setError('Failed to fetch users');
         toast.error('Failed to load users data');
       } finally {
@@ -39,11 +37,6 @@ export function AdminUsers() {
 
     fetchUsers();
   }, []);
-
-  // useEffect(() => {
-  //   console.log("Current user ID:", currentUser?.user?._id);
-  //   console.log("User IDs from API:", users.map(u => u._id));
-  // }, [users, currentUser]);
 
   const handleEditUser = (user: User) => {
     toast.info(`Edit user: ${user.name}`);

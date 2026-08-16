@@ -58,12 +58,7 @@ export function TypingPage() {
     queryKey: ['typing-history'],
     queryFn: () => api.typing.getUserHistory(),
     staleTime: 30000,
-  });
-  useEffect(() => {
-    if (history) {
-      console.log('Typing History Data:', history); // Log the history data
-    }
-  }, [history]); 
+  }); 
 
   const calculateStats = useCallback(() => {
     if (!startTime) return null;

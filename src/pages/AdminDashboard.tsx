@@ -32,15 +32,12 @@ export function AdminDashboard() {
     setIsLoading(true);
     try {
       const response = await api.admin.getStats();
-      console.log('Admin stats data:', response);
       if (response && typeof response === 'object') {
         setStats(response as Stats);
       } else {
-        console.error('Invalid response format');
         toast.error('Failed to load dashboard data');
       }
     } catch (error) {
-      console.error('Error fetching admin stats:', error);
       toast.error('Failed to load dashboard data');
     } finally {
       setIsLoading(false);

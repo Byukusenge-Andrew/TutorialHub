@@ -20,7 +20,6 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isLoading: true,
       login: (user: User, token: string) => {
-        console.log('Setting auth state:', { user, token });
         set({
           user,
           token,
@@ -29,7 +28,6 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
       logout: () => {
-        console.log('Clearing auth state');
         set({
           user: null,
           token: null,
@@ -44,9 +42,7 @@ export const useAuthStore = create<AuthStore>()(
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
-        user: state.user,
         token: state.token,
-        isAuthenticated: state.isAuthenticated,
       }),
     }
   )

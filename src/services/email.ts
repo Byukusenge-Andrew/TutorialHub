@@ -23,10 +23,8 @@ export const sendEmail = async (to: string, name: string) => {
     };
 
     try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent:', info.response);
+        await transporter.sendMail(mailOptions);
     } catch (error) {
-        console.error('Error sending email:', error);
-        throw error; // Rethrow or handle as needed
+        throw error;
     }
 }; 

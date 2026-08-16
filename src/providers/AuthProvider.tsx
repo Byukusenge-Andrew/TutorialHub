@@ -52,20 +52,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Set up interceptor when provider is initialized
   setupInterceptor();
 
-  // Try to restore user from localStorage immediately
+  // Clean up legacy unencrypted user object from localStorage if present
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
-        localStorage.removeItem('user');
-      }
+    if (localStorage.getItem('user')) {
+      localStorage.removeItem('user');
     }
   }, []);
 
-  // Then validate the token
+  // Validate the token and fetch user profile dynamically into state
   useEffect(() => {
     const validateToken = async () => {
       const storedToken = localStorage.getItem('token');
@@ -73,30 +67,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const response = await axios.get(`${API_URL}/auth/validate`, {
             headers: { Authorization: `Bearer ${storedToken}` },
-            timeout: 5000 // Add timeout to prevent long waiting
+            timeout: 5000
           });
           
           const { user: userData } = response.data.data;
           setUser(userData);
           setToken(storedToken);
         } catch (error) {
-          console.error('Token validation failed:', axios.isAxiosError(error) ? error.response?.data?.message || error.message : error);
-          // Don't log out user immediately on network errors
           if (axios.isAxiosError(error) && error.code === 'ERR_NETWORK') {
-            console.warn('Network error during validation - keeping user session');
-            // Try to use stored user data
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-              try {
-                setUser(JSON.parse(storedUser));
-                // Keep token valid
-              } catch (e) {
-                // If stored user is invalid, log out
-                logout();
-              }
-            }
+            // Network error during validation - keep stored token state
           } else {
-            // For other errors like 401, log out
+            // Invalid or expired token
             logout();
           }
         } finally {
@@ -120,11 +101,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(newToken);
       
       localStorage.setItem('token', newToken);
-      localStorage.setItem('user', JSON.stringify(userData));
       
       return response.data;
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -135,13 +114,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const response = await axios.post(`${API_URL}/auth/register`, { name, email, password });
     const { user: userData, token: newToken } = response.data.data;
     
-    // Update state
+    // Update in-memory state
     setUser(userData);
     setToken(newToken);
     
-    // Store in localStorage
     localStorage.setItem('token', newToken);
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
